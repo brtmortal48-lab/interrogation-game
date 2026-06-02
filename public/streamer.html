@@ -43,7 +43,8 @@
 
     <div class="settingsGrid">
       <label>Min Players <input id="minPlayers" type="number" min="2" max="30" value="2"></label>
-      <label>Round Time <input id="roundTime" type="number" min="60" max="600" value="210"></label>
+      <label>Max Players <input id="maxPlayers" type="number" min="2" max="50" value="10"></label>
+      <label>Round Time <input id="roundTime" type="number" min="0" max="3600" value="210"></label>
       <label>Cooldown ms <input id="cooldown" type="number" min="1000" max="15000" value="4000"></label>
 
       <label>Difficulty
@@ -71,6 +72,8 @@
       <label>Music Volume
         <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)">
       </label>
+
+      <p class="hint">Set Round Time to 0 for unlimited Story Mode.</p>
     </div>
   </details>
 </div>
@@ -90,23 +93,38 @@
   <div id="lobbyList">No players yet.</div>
 </div>
 
-<div id="incident" class="incident">Waiting for incident...</div>
+<div id="incident" class="incident">Waiting for case...</div>
+
+<section class="panel">
+  <h2>📁 Case File</h2>
+  <div id="caseFile" class="card">
+    <p>Start a round to generate a case.</p>
+  </div>
+</section>
 
 <div class="streamerMainLayout">
   <div class="streamerLeft">
     <section class="panel">
-      <h2>🧾 Evidence Board</h2>
+      <h2>🧾 Investigation Board</h2>
+      <p class="hint">These facts and leads create questions. They should not solve the case by themselves.</p>
       <div id="evidence"></div>
     </section>
 
     <section class="panel">
-      <h2>👥 Suspects</h2>
-      <p class="hint">Use More only when you need pressure tools or moderation.</p>
+      <h2>👥 Suspects & Alibis</h2>
+      <p class="hint">Start by asking where each player was at the case time.</p>
       <div id="players"></div>
     </section>
   </div>
 
   <div class="streamerRight">
+    <section class="panel">
+      <h2>❓ Suggested Questions</h2>
+      <div id="questions">
+        <p class="hint">Questions appear when the round starts.</p>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>🧠 Theory Board</h2>
 
@@ -140,11 +158,11 @@
     <button class="closeBtn" onclick="closeHowTo()">×</button>
     <h2>Streamer Guide</h2>
     <ol>
-      <li>Read the evidence board.</li>
-      <li>Question players and watch contradictions.</li>
-      <li>Use suspicion, pressure, and theory board.</li>
-      <li>Accuse one player.</li>
-      <li>Reveal the truth.</li>
+      <li>Read the case file.</li>
+      <li>Ask each player where they were at the case time.</li>
+      <li>Compare public alibis with anonymous reveals.</li>
+      <li>Use suspicion and pressure when stories conflict.</li>
+      <li>Accuse one player and reveal the case summary.</li>
     </ol>
   </div>
 </div>

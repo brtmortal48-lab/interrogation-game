@@ -4,6 +4,7 @@ let roomId = "";
 let hostKey = "";
 let players = [];
 let minPlayers = 2;
+let maxPlayers = 10;
 let soundEnabled = true;
 let roomLocked = true;
 
@@ -77,6 +78,7 @@ function saveSettings() {
     roomId,
     settings: {
       minPlayers: document.getElementById("minPlayers").value,
+      maxPlayers: document.getElementById("maxPlayers").value,
       roundTime: document.getElementById("roundTime").value,
       cooldown: document.getElementById("cooldown").value,
       difficulty: document.getElementById("difficulty").value
@@ -344,6 +346,7 @@ socket.on("joinError", (message) => {
 socket.on("roomUpdate", (data) => {
   players = data.players || [];
   minPlayers = data.minPlayers || 2;
+  maxPlayers = data.maxPlayers || 10;
 
   if (data.streamerName) {
     document.getElementById("detectiveLabel").innerText = data.streamerName;
@@ -354,6 +357,7 @@ socket.on("roomUpdate", (data) => {
 
   if (data.settings) {
     document.getElementById("minPlayers").value = data.settings.minPlayers;
+    document.getElementById("maxPlayers").value = data.settings.maxPlayers || 10;
     document.getElementById("roundTime").value = data.settings.roundTime;
     document.getElementById("cooldown").value = data.settings.cooldown;
     document.getElementById("difficulty").value = data.settings.difficulty;
@@ -364,7 +368,7 @@ socket.on("roomUpdate", (data) => {
   renderTheoryBoard();
 
   document.getElementById("roundNumber").innerText = data.roundNumber || 0;
-  document.getElementById("playerCount").innerText = `${players.length} / ${minPlayers}`;
+  document.getElementById("playerCount").innerText = `${players.length} / ${maxPlayers}`;
   document.getElementById("startBtn").disabled = players.length < minPlayers;
 });
 
@@ -373,7 +377,10 @@ socket.on("roundStarted", (data) => {
 
   document.getElementById("incident").innerText = data.incidentTitle;
   document.getElementById("roundNumber").innerText = data.roundNumber;
-  document.getElementById("timer").innerText = formatTime(data.timeLeft);
+  document.getElementById("timer").innerText = data.unlimitedTime ? "∞" : formatTime(data.timeLeft);
+
+  renderCaseFile(data.caseFile);
+  renderQuestions(data.suggestedQuestions || []);
 
   const evidenceDiv = document.getElementById("evidence");
   evidenceDiv.innerHTML = "";
@@ -386,7 +393,7 @@ socket.on("roundStarted", (data) => {
 
 socket.on("midEvidenceDrop", (e) => {
   appendEvidence(e, true);
-  addSystemMessage("🚨 MID-ROUND TWIST: New evidence has appeared.");
+  addSystemMessage("🚨 NEW LEAD: Re-check the alibis.");
 });
 
 socket.on("suspicionUpdate", (data) => {
@@ -397,7 +404,7 @@ socket.on("suspicionUpdate", (data) => {
 });
 
 socket.on("timerUpdate", (timeLeft) => {
-  document.getElementById("timer").innerText = formatTime(timeLeft);
+  document.getElementById("timer").innerText = timeLeft === 0 ? "∞" : formatTime(timeLeft);
 });
 
 socket.on("newMessage", (data) => {
@@ -434,24 +441,24 @@ socket.on("accusation", (data) => {
 
 socket.on("reveal", (data) => {
   document.getElementById("result").innerHTML = `
-    <h2>${data.success ? "✅ Detective solved it" : "❌ Culprit escaped"}</h2>
+    <h2>${data.success ? "✅ Detective solved it" : "❌ Murderer escaped"}</h2>
     <p><b>Accused:</b> ${escapeHtml(data.accusedPlayerName)}</p>
-    <p><b>Real Culprit:</b> ${escapeHtml(data.culpritName)}</p>
-    <p><b>Cause:</b> ${escapeHtml(data.cause)}</p>
+    <p><b>Real Murderer:</b> ${escapeHtml(data.culpritName)}</p>
     <p><b>Location:</b> ${escapeHtml(data.location)}</p>
+    <p><b>What Happened:</b> ${escapeHtml(data.solution || "The full truth was revealed.")}</p>
 
     <div class="summaryGrid">
-      <div class="summaryBox"><h3>Helpers</h3><p>${data.helpers.length ? data.helpers.map(escapeHtml).join(", ") : "None"}</p></div>
-      <div class="summaryBox"><h3>Misleaders</h3><p>${data.misleaders.length ? data.misleaders.map(escapeHtml).join(", ") : "None"}</p></div>
+      <div class="summaryBox"><h3>Strong Witnesses</h3><p>${data.helpers.length ? data.helpers.map(escapeHtml).join(", ") : "None"}</p></div>
       <div class="summaryBox"><h3>Escaped</h3><p>${data.escaped ? escapeHtml(data.escaped) : "Nobody"}</p></div>
     </div>
 
-    <h3>Score Reveal</h3>
+    <h3>Round Summary</h3>
     ${data.players.map(p => `
       <div class="revealRow">
         <b>${escapeHtml(p.name)}</b> — ${escapeHtml(p.role)}
         <span class="score">+${p.gained} / ${p.score}</span>
-        <br><small><b>${escapeHtml(p.confidence)}</b> confidence — ${escapeHtml(p.clue)}</small>
+        <br><small><b>Alibi:</b> ${escapeHtml(p.publicAlibi || "Unknown")}</small>
+        <br><small><b>Observation:</b> ${escapeHtml(p.clue || "None")}</small>
       </div>
     `).join("")}
   `;
@@ -461,12 +468,38 @@ socket.on("reveal", (data) => {
 
 socket.on("soundCue", playSound);
 
+function renderCaseFile(caseFile) {
+  const box = document.getElementById("caseFile");
+  if (!box || !caseFile) return;
+
+  box.innerHTML = `
+    <h3>${escapeHtml(caseFile.title)}</h3>
+    <p><b>Location:</b> ${escapeHtml(caseFile.location)}</p>
+    <p><b>Time:</b> ${escapeHtml(caseFile.time)}</p>
+    <p><b>Incident:</b> ${escapeHtml(caseFile.incident)}</p>
+    <p>${escapeHtml(caseFile.atmosphere)}</p>
+    <p><b>Known Facts:</b></p>
+    <ul>
+      ${(caseFile.knownFacts || []).map(fact => `<li>${escapeHtml(fact)}</li>`).join("")}
+    </ul>
+  `;
+}
+
+function renderQuestions(questions) {
+  const div = document.getElementById("questions");
+  if (!div) return;
+
+  div.innerHTML = questions.length
+    ? `<ul>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join("")}</ul>`
+    : `<p class="hint">No suggested questions yet.</p>`;
+}
+
 function appendEvidence(e, isNew = false) {
   document.getElementById("evidence").innerHTML += `
     <div class="card evidence ${e.reliability.toLowerCase()} ${isNew ? "newEvidence" : ""}">
       <b>${escapeHtml(e.type)}</b>
       <span class="badge">${escapeHtml(e.reliability)}</span>
-      ${isNew ? "<div class='newBadge'>NEW EVIDENCE</div>" : ""}
+      ${isNew ? "<div class='newBadge'>NEW LEAD</div>" : ""}
       <p>${escapeHtml(e.text)}</p>
     </div>
   `;
@@ -487,6 +520,7 @@ function renderPlayers(playerList) {
         <div class="playerMain">
           <b>${escapeHtml(p.name)}</b>
           <small class="scoreSmall">Score: ${p.score || 0}</small>
+          <p class="hint"><b>Alibi:</b> ${escapeHtml(p.publicAlibi || "No alibi yet.")}</p>
           <div class="meter"><div class="fill" style="width:${p.suspicion || 0}%"></div></div>
           <small>Suspicion: ${p.suspicion || 0}%</small>
         </div>

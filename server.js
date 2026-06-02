@@ -13,6 +13,7 @@ const io = new Server(server);
 const rooms = {};
 const DEFAULT_SETTINGS = {
   minPlayers: 2,
+  maxPlayers: 10,
   roundTime: 210,
   cooldown: 4000,
   difficulty: "normal"
@@ -69,6 +70,11 @@ io.on("connection", (socket) => {
     }
 
     if (!room.players.find((p) => p.id === socket.id)) {
+      if (room.players.length >= room.settings.maxPlayers) {
+        socket.emit("joinError", "This room is full.");
+        return;
+      }
+
       room.players.push({
         id: socket.id,
         name: cleanName,
@@ -76,8 +82,14 @@ io.on("connection", (socket) => {
         role: null,
         clue: null,
         fakeRevealClue: null,
+        publicAlibi: null,
+        hiddenTruth: null,
+        anonymousTip: null,
+        observationQuality: null,
         confidence: null,
         objective: null,
+        abilityName: "Anonymous Tip",
+        abilityDescription: "Send one anonymous tip to create discussion.",
         suspicion: 0,
         revealedClue: false,
         anonymousUsed: false,
@@ -104,12 +116,17 @@ io.on("connection", (socket) => {
 
     room.settings = {
       minPlayers: clamp(Number(settings.minPlayers), 2, 30),
-      roundTime: clamp(Number(settings.roundTime), 60, 600),
+      maxPlayers: clamp(Number(settings.maxPlayers), 2, 50),
+      roundTime: clamp(Number(settings.roundTime), 0, 3600),
       cooldown: clamp(Number(settings.cooldown), 1000, 15000),
       difficulty: ["easy", "normal", "hard"].includes(settings.difficulty)
         ? settings.difficulty
         : "normal"
     };
+
+    if (room.settings.maxPlayers < room.settings.minPlayers) {
+      room.settings.maxPlayers = room.settings.minPlayers;
+    }
 
     emitRoomUpdate(roomId);
     io.to(roomId).emit("systemMessage", "Room settings updated.");
@@ -185,17 +202,27 @@ io.on("connection", (socket) => {
 
     let text = "";
 
-    if (action === "claim") text = "I have information, but I need you to ask the right question.";
-    if (action === "defend") text = "I think I am being framed or misunderstood.";
-    if (action === "doubt") text = `I doubt ${targetName}'s story.`;
-    if (action === "accuse") text = `I think ${targetName} is hiding something.`;
+    if (action === "claim") {
+      text = `I can explain my alibi if the detective asks.`;
+    }
+
+    if (action === "defend") {
+      text = "My story has a reason. Ask me where I was and who could confirm it.";
+    }
+
+    if (action === "doubt") {
+      text = `I doubt ${targetName}'s alibi. Something feels off.`;
+    }
+
+    if (action === "accuse") {
+      text = `I think ${targetName} is hiding something.`;
+    }
+
+    if (action === "alibi") {
+      text = `My public alibi: ${player.publicAlibi || "No alibi available."}`;
+    }
 
     if (action === "anonymous") {
-      if (player.role !== "Culprit") {
-        socket.emit("systemMessage", "Only the culprit can use Anonymous Tip.");
-        return;
-      }
-
       if (player.anonymousUsed) {
         socket.emit("systemMessage", "You already used your Anonymous Tip this round.");
         return;
@@ -203,7 +230,7 @@ io.on("connection", (socket) => {
 
       player.anonymousUsed = true;
 
-      const anonymousText = generateAnonymousTip(room, player);
+      const anonymousText = player.anonymousTip || generateAnonymousTip(room, player);
 
       io.to(roomId).emit("newMessage", {
         playerId: "anonymous",
@@ -214,6 +241,7 @@ io.on("connection", (socket) => {
       });
 
       io.to(player.id).emit("anonymousUsed");
+
       io.to(roomId).emit("systemMessage", "A suspicious anonymous tip has appeared.");
       return;
     }
@@ -226,13 +254,21 @@ io.on("connection", (socket) => {
 
       player.revealedClue = true;
 
-      const revealClue = player.role === "Culprit" && player.fakeRevealClue
+      const revealClue = player.role === "Murderer" && player.fakeRevealClue
         ? player.fakeRevealClue
         : player.clue;
 
-      text = `I reveal my clue: "${revealClue}" Confidence: ${player.confidence}.`;
+      io.to(roomId).emit("newMessage", {
+        playerId: "anonymousReveal",
+        name: "Anonymous Reveal",
+        message: `Someone reveals: "${revealClue}" Observation Quality: ${player.observationQuality || player.confidence}.`,
+        tag: "REVEAL",
+        time: new Date().toLocaleTimeString()
+      });
 
       io.to(player.id).emit("revealTokenUsed");
+      io.to(roomId).emit("systemMessage", "An anonymous observation was revealed.");
+      return;
     }
 
     if (!text) return;
@@ -257,12 +293,14 @@ io.on("connection", (socket) => {
     room.accused = null;
     room.midEvidenceDropped = false;
     room.spotlightPlayerId = null;
+
     room.incident = generateIncident(room.players, room.settings.difficulty);
+    room.caseFile = generateCaseFile(room);
+    assignAlibisRolesAndClues(room);
 
-    assignRolesAndClues(room);
-
-    room.evidence = generateEvidence(room);
+    room.evidence = generateInvestigationBoard(room);
     room.midEvidence = generateMidEvidence(room);
+    room.suggestedQuestions = generateSuggestedQuestions(room);
 
     room.players.forEach((p) => {
       p.suspicion = 0;
@@ -272,11 +310,17 @@ io.on("connection", (socket) => {
 
       io.to(p.id).emit("privateData", {
         role: p.role,
+        publicAlibi: p.publicAlibi,
+        hiddenTruth: p.hiddenTruth,
         clue: p.clue,
-        revealClue: p.role === "Culprit" && p.fakeRevealClue ? p.fakeRevealClue : p.clue,
-        confidence: p.confidence,
+        revealClue: p.role === "Murderer" && p.fakeRevealClue ? p.fakeRevealClue : p.clue,
+        observationQuality: p.observationQuality,
+        confidence: p.observationQuality,
         objective: p.objective,
-        canUseAnonymous: p.role === "Culprit"
+        abilityName: p.abilityName,
+        abilityDescription: p.abilityDescription,
+        canUseAnonymous: true,
+        caseFile: room.caseFile
       });
 
       io.to(p.id).emit("roundState", {
@@ -286,39 +330,47 @@ io.on("connection", (socket) => {
     });
 
     io.to(roomId).emit("roundStarted", {
+      caseFile: room.caseFile,
       evidence: room.evidence,
+      suggestedQuestions: room.suggestedQuestions,
       players: publicPlayers(room.players),
       roundNumber: room.roundNumber,
       timeLeft: room.timeLeft,
-      incidentTitle: room.incident.title,
+      unlimitedTime: room.settings.roundTime === 0,
+      incidentTitle: room.caseFile.title,
       streamerName: room.streamerName
     });
 
     io.to(roomId).emit("soundCue", "start");
     emitRoomUpdate(roomId);
 
-    room.timer = setInterval(() => {
-      room.timeLeft -= 1;
-      io.to(roomId).emit("timerUpdate", room.timeLeft);
+    if (room.settings.roundTime > 0) {
+      room.timer = setInterval(() => {
+        room.timeLeft -= 1;
+        io.to(roomId).emit("timerUpdate", room.timeLeft);
 
-      if (!room.midEvidenceDropped && room.timeLeft === Math.floor(room.settings.roundTime / 2)) {
-        room.midEvidenceDropped = true;
+        if (!room.midEvidenceDropped && room.timeLeft === Math.floor(room.settings.roundTime / 2)) {
+          room.midEvidenceDropped = true;
 
-        io.to(roomId).emit("midEvidenceDrop", room.midEvidence);
-        io.to(roomId).emit("systemMessage", "🚨 New evidence recovered. Re-check your theory.");
-        io.to(roomId).emit("soundCue", "twist");
-      }
+          io.to(roomId).emit("midEvidenceDrop", room.midEvidence);
+          io.to(roomId).emit("systemMessage", "🚨 New lead recovered. Re-check the alibis.");
+          io.to(roomId).emit("soundCue", "twist");
+        }
 
-      if (room.timeLeft <= 0) {
-        clearRoomTimer(room);
-        room.state = "accusation";
+        if (room.timeLeft <= 0) {
+          clearRoomTimer(room);
+          room.state = "accusation";
 
-        io.to(roomId).emit("systemMessage", "Time is up. Make your final accusation.");
-        io.to(roomId).emit("soundCue", "pressure");
+          io.to(roomId).emit("systemMessage", "Time is up. Make your final accusation.");
+          io.to(roomId).emit("soundCue", "pressure");
 
-        emitRoomUpdate(roomId);
-      }
-    }, 1000);
+          emitRoomUpdate(roomId);
+        }
+      }, 1000);
+    } else {
+      io.to(roomId).emit("timerUpdate", 0);
+      io.to(roomId).emit("systemMessage", "Story Mode enabled. No timer.");
+    }
   });
 
   socket.on("interrogate", ({ roomId, playerId }) => {
@@ -329,7 +381,7 @@ io.on("connection", (socket) => {
     if (!player) return;
 
     io.to(playerId).emit("interrogated");
-    io.to(roomId).emit("systemMessage", `${player.name} is under pressure.`);
+    io.to(roomId).emit("systemMessage", `${player.name} is under pressure. Ask about their alibi.`);
     io.to(roomId).emit("soundCue", "pressure");
   });
 
@@ -356,7 +408,7 @@ io.on("connection", (socket) => {
 
       io.to(player.id).emit("pressure", {
         type: "fact",
-        message: "Reveal one useful statement. Do not dodge."
+        message: "Reveal one useful statement about your alibi, location, or observation. Do not dodge."
       });
 
       io.to(roomId).emit("systemMessage", `${player.name} must reveal one useful statement.`);
@@ -367,7 +419,7 @@ io.on("connection", (socket) => {
 
       io.to(player.id).emit("pressure", {
         type: "spotlight",
-        message: "You are in the 20-second spotlight. Defend yourself now."
+        message: "You are in the 20-second spotlight. Defend your alibi now."
       });
 
       io.to(roomId).emit("spotlight", {
@@ -428,41 +480,46 @@ io.on("connection", (socket) => {
     clearRoomTimer(room);
     room.state = "revealed";
 
-    const culprit = room.players.find((p) => p.id === room.incident.culpritId);
+    const murderer = room.players.find((p) => p.id === room.incident.culpritId);
     const accused = room.players.find((p) => p.id === room.accused);
     const success = room.accused === room.incident.culpritId;
 
     room.players.forEach((p) => {
       let gained = 0;
 
-      if (p.role === "Culprit") gained = success ? 0 : 100;
+      if (p.role === "Murderer") gained = success ? 0 : 100;
       else if (p.role === "Witness") gained = success ? 100 : 25;
-      else if (p.role === "Misinformed") gained = room.accused !== p.id ? 50 : 0;
       else if (p.role === "Observer") gained = room.accused !== p.id ? 25 : 0;
+      else gained = room.accused !== p.id ? 40 : 0;
 
       p.score += gained;
       p.lastGained = gained;
     });
 
-    const helpers = room.players.filter((p) => p.role === "Witness");
-    const misleaders = room.players.filter((p) => p.role === "Misinformed");
-    const escaped = !success && culprit ? culprit.name : null;
+    const witnesses = room.players.filter((p) => p.role === "Witness");
+    const escaped = !success && murderer ? murderer.name : null;
 
     io.to(roomId).emit("reveal", {
       success,
       accusedPlayerName: accused ? accused.name : "No accusation",
-      culpritName: culprit ? culprit.name : "Unknown",
+      culpritName: murderer ? murderer.name : "Unknown",
+      murdererName: murderer ? murderer.name : "Unknown",
       cause: room.incident.cause,
       location: room.incident.location,
-      helpers: helpers.map((p) => p.name),
-      misleaders: misleaders.map((p) => p.name),
+      caseFile: room.caseFile,
+      solution: room.incident.solution,
+      helpers: witnesses.map((p) => p.name),
+      misleaders: [],
       escaped,
       players: room.players.map((p) => ({
         name: p.name,
         role: p.role,
+        publicAlibi: p.publicAlibi,
+        hiddenTruth: p.hiddenTruth,
         clue: p.clue,
         fakeRevealClue: p.fakeRevealClue,
-        confidence: p.confidence,
+        observationQuality: p.observationQuality,
+        confidence: p.observationQuality,
         suspicion: p.suspicion,
         score: p.score,
         gained: p.lastGained || 0
@@ -503,6 +560,8 @@ function createRoom(hostKey) {
     midEvidence: null,
     midEvidenceDropped: false,
     incident: null,
+    caseFile: null,
+    suggestedQuestions: [],
     accused: null,
     spotlightPlayerId: null,
     settings: { ...DEFAULT_SETTINGS }
@@ -522,205 +581,321 @@ function generateHostKey() {
 function generateIncident(players, difficulty) {
   const culprit = random(players);
 
-  const hardTitles = [
-    "Two records contradict each other after a blackout.",
-    "A false security trail appeared minutes before failure.",
-    "Someone manipulated access logs during a system crash."
+  const cases = [
+    {
+      title: "Emergency Lockdown",
+      incident: "Restricted access was detected after curfew.",
+      location: "Security Office",
+      time: "8:37 PM",
+      cause: "unauthorized access",
+      object: "master access card",
+      atmosphere: "The building went silent after the lockdown alarm.",
+      solution: "The murderer used the confusion from the camera glitch to enter the restricted area."
+    },
+    {
+      title: "Missing Prototype",
+      incident: "A prototype device vanished during a short power failure.",
+      location: "Research Lab",
+      time: "9:12 PM",
+      cause: "planned theft",
+      object: "prototype device",
+      atmosphere: "The backup lights flickered while everyone argued about where they had been.",
+      solution: "The murderer moved during the blackout and used a false alibi to cover the gap."
+    },
+    {
+      title: "The Broken Broadcast",
+      incident: "A live broadcast feed was cut right before a key recording disappeared.",
+      location: "Broadcast Room",
+      time: "10:04 PM",
+      cause: "sabotage",
+      object: "recording drive",
+      atmosphere: "The control desk was still warm when the others arrived.",
+      solution: "The murderer interrupted the feed long enough to remove the recording drive."
+    },
+    {
+      title: "The Vanished Ledger",
+      incident: "A confidential ledger disappeared from a locked archive.",
+      location: "Archive Room",
+      time: "7:48 PM",
+      cause: "cover-up",
+      object: "confidential ledger",
+      atmosphere: "Several people had reasons to be near the archive, but nobody wanted to admit it.",
+      solution: "The murderer used an ordinary errand as cover to approach the archive."
+    },
+    {
+      title: "The Reactor Alert",
+      incident: "A false reactor alert pulled everyone away from their posts.",
+      location: "Control Room",
+      time: "11:19 PM",
+      cause: "distraction",
+      object: "reactor override key",
+      atmosphere: "The alarm created panic, and everyone’s timeline became messy.",
+      solution: "The murderer triggered the false alert to create a clean escape window."
+    }
   ];
 
-  const normalTitles = [
-    "A critical system failed under suspicious conditions.",
-    "A restricted file was opened minutes before lockdown.",
-    "The power grid collapsed after unusual movement nearby.",
-    "A security alarm was triggered with incomplete footage.",
-    "A valuable item vanished during a short blackout."
+  const hardExtra = difficulty === "hard"
+    ? " Some records contradict each other, so witness alibis matter more than the system logs."
+    : "";
+
+  const selected = { ...random(cases) };
+  selected.culpritId = culprit.id;
+  selected.difficultyNote = hardExtra;
+
+  return selected;
+}
+
+function generateCaseFile(room) {
+  const caseNumber = Math.floor(100 + Math.random() * 900);
+  const knownFacts = [
+    `${room.incident.location} is the center of the incident.`,
+    `The incident happened around ${room.incident.time}.`,
+    `Multiple people were moving nearby.`,
+    `Records are incomplete, so alibis matter.`,
+    `The ${room.incident.object} is connected to the incident.`
   ];
 
   return {
-    culpritId: culprit.id,
-    title: random(difficulty === "hard" ? hardTitles : normalTitles),
-    cause: random(["tampering", "cover-up", "reckless mistake", "planned sabotage"]),
-    location: random(["Control Room", "Generator Room", "Storage", "Security Office", "Sector A"])
+    number: caseNumber,
+    title: `CASE #${caseNumber}: ${room.incident.title}`,
+    location: room.incident.location,
+    incident: room.incident.incident,
+    time: room.incident.time,
+    atmosphere: room.incident.atmosphere + (room.incident.difficultyNote || ""),
+    knownFacts
   };
 }
 
-function assignRolesAndClues(room) {
-  const culprit = room.players.find((p) => p.id === room.incident.culpritId);
-  const others = room.players.filter((p) => p.id !== culprit.id).sort(() => Math.random() - 0.5);
+function assignAlibisRolesAndClues(room) {
+  const murderer = room.players.find((p) => p.id === room.incident.culpritId);
+  const others = room.players.filter((p) => p.id !== murderer.id).sort(() => Math.random() - 0.5);
 
-  room.players.forEach((p) => {
-    p.role = "Observer";
-    p.confidence = random(["Low", "Medium"]);
-    p.clue = random([
-      `You heard movement near ${room.incident.location}, but did not see who it was.`,
-      `You noticed people acting nervous after the incident.`,
-      `You remember a noise near ${room.incident.location}, but the timing is unclear.`,
-      `You noticed the room becoming quiet after ${room.incident.location} was mentioned.`
-    ]);
-    p.fakeRevealClue = null;
-    p.objective = random([
-      "Observe contradictions and avoid becoming the easiest accusation.",
-      "Watch who changes their story under pressure.",
-      "Stay believable and help the detective only when your information is useful."
-    ]);
-  });
-
-  const frameTarget = random(others) || culprit;
-  const decoyTarget = random(others.filter((p) => p.id !== frameTarget.id)) || frameTarget;
-
-  culprit.role = "Culprit";
-  culprit.confidence = random(["Medium", "High"]);
-  culprit.clue = random([
-    `SECRET: You arrived at ${room.incident.location} shortly before the incident. Someone may have noticed.`,
-    `SECRET: Your timeline overlaps with the incident at ${room.incident.location}. If people compare details carefully, they may catch it.`,
-    `SECRET: You left ${room.incident.location} without explaining why. That gap could become dangerous.`,
-    `SECRET: You know a detail about ${room.incident.location} that nobody else should know.`,
-    `SECRET: Evidence may eventually connect you to ${room.incident.location}, but it is not clear yet.`,
-    `SECRET: You were close enough to ${room.incident.location} that a careful witness could become a problem.`
+  const locations = unique([
+    room.incident.location,
+    "Hallway",
+    "Storage",
+    "Cafeteria",
+    "Lobby",
+    "Server Room",
+    "Generator Room",
+    "West Corridor",
+    "Meeting Room",
+    "Maintenance Bay"
   ]);
 
-  culprit.fakeRevealClue = random([
+  const actions = [
+    "checking a noise",
+    "looking for supplies",
+    "fixing a small issue",
+    "waiting for someone",
+    "passing through",
+    "checking the lights",
+    "organizing equipment",
+    "searching for a missing item",
+    "talking to someone briefly",
+    "trying to understand the alarm"
+  ];
+
+  room.players.forEach((p, index) => {
+    const alibiLocation = locations[index % locations.length];
+    const alibiAction = random(actions);
+
+    p.publicAlibi = `You were in ${alibiLocation}, ${alibiAction}, around ${room.incident.time}.`;
+    p.role = "Observer";
+    p.observationQuality = random(["Low", "Medium"]);
+    p.confidence = p.observationQuality;
+    p.clue = random([
+      `You heard movement somewhere near ${room.incident.location}, but you did not see who it was.`,
+      `You noticed the area became tense after ${room.incident.time}.`,
+      `You remember someone moving quickly, but you cannot identify them.`,
+      `You heard people arguing about who was near ${room.incident.location}.`
+    ]);
+    p.fakeRevealClue = null;
+    p.hiddenTruth = "";
+    p.objective = random([
+      "Compare alibis and watch who changes their story.",
+      "Stay believable. Help the detective only when your observation is useful.",
+      "Ask others where they were and look for contradictions."
+    ]);
+    p.abilityName = "Anonymous Tip";
+    p.abilityDescription = "Once per round, send one anonymous tip to push discussion without revealing your name.";
+    p.anonymousTip = generateAnonymousTip(room, p);
+  });
+
+  const frameTarget = random(others) || murderer;
+  const decoyTarget = random(others.filter((p) => p.id !== frameTarget.id)) || frameTarget;
+
+  murderer.role = "Murderer";
+  murderer.observationQuality = random(["Medium", "High"]);
+  murderer.confidence = murderer.observationQuality;
+  murderer.publicAlibi = random([
+    `You were in ${random(locations.filter((l) => l !== room.incident.location))}, ${random(actions)}, around ${room.incident.time}.`,
+    `You were away from ${room.incident.location}, trying to understand the alarm, around ${room.incident.time}.`,
+    `You were passing through the hallway and did not stay near ${room.incident.location}.`
+  ]);
+
+  murderer.hiddenTruth = random([
+    `SECRET: You were actually near ${room.incident.location} when the incident happened.`,
+    `SECRET: Your public alibi has a dangerous time gap around ${room.incident.time}.`,
+    `SECRET: You know what happened to the ${room.incident.object}, but you cannot admit it.`,
+    `SECRET: Someone may have noticed you close to ${room.incident.location}.`
+  ]);
+
+  murderer.clue = murderer.hiddenTruth;
+
+  murderer.fakeRevealClue = random([
     `You heard movement near ${room.incident.location}, but you could not identify who it was.`,
     `You saw ${frameTarget.name} acting nervous after the incident, but you are not fully sure why.`,
     `You noticed ${decoyTarget.name} was unusually quiet when ${room.incident.location} was mentioned.`,
     `You remember a sound from ${room.incident.location}, but the timing felt confusing.`,
-    `You saw people gathering near ${room.incident.location}, but nothing clearly proved who caused it.`,
-    `You noticed someone leaving the area after the incident, but you only saw them briefly.`
+    `You saw people gathering near ${room.incident.location}, but nothing clearly proved who caused it.`
   ]);
 
-  culprit.objective = random([
+  murderer.objective = random([
     `Survive until reveal. Secret goal: make ${frameTarget.name} become the main suspect.`,
-    `Survive until reveal. Secret goal: make at least one witness doubt their own clue.`,
+    `Survive until reveal. Secret goal: make one strong witness doubt their own observation.`,
     `Survive until reveal. Secret goal: get two other players arguing with each other.`,
-    `Survive until reveal. Secret goal: use your fake reveal clue at the right moment to look helpful.`,
     `Survive until reveal. Secret goal: keep the detective uncertain until time runs out.`,
-    `Survive until reveal. Secret goal: redirect discussion away from your movements.`
-  ]) + " You also have one Anonymous Tip ability.";
+    `Survive until reveal. Secret goal: redirect discussion away from your real location.`
+  ]);
+
+  murderer.abilityName = "Anonymous Tip";
+  murderer.abilityDescription = "Once per round, send one anonymous tip. Use it to redirect suspicion without exposing yourself.";
+  murderer.anonymousTip = generateAnonymousTip(room, murderer);
 
   others.forEach((p, i) => {
     if (i % 3 === 0) {
       p.role = "Witness";
-      p.confidence = random(["Medium", "High"]);
+      p.observationQuality = random(["Medium", "High"]);
+      p.confidence = p.observationQuality;
       p.clue = random([
-        `You saw ${culprit.name} near ${room.incident.location} shortly before the incident.`,
-        `${culprit.name} was one of the last people you noticed near ${room.incident.location}.`,
-        `You heard ${culprit.name}'s name mentioned around the incident time.`,
-        `You noticed ${culprit.name} leaving the area shortly after something felt wrong.`,
-        `${culprit.name} appeared unusually tense when ${room.incident.location} was mentioned.`
+        `You saw someone near ${room.incident.location} shortly before the incident, but only caught part of the movement.`,
+        `You noticed a person leaving the area near ${room.incident.location}, but the angle was bad.`,
+        `You heard footsteps moving away from ${room.incident.location} around ${room.incident.time}.`,
+        `You remember someone reacting too quickly when ${room.incident.location} was mentioned.`
       ]);
       p.objective = random([
-        "Help the detective connect the dots without overstating your clue.",
+        "Help the detective connect alibis without overstating your observation.",
         "Share what you know, but be careful: sounding too certain may backfire.",
-        "Protect your credibility and help expose contradictions."
+        "Protect your credibility and expose contradictions."
       ]);
     } else if (i % 3 === 1) {
-      const wrong = random(room.players.filter((x) => x.id !== culprit.id && x.id !== p.id)) || culprit;
-      p.role = "Misinformed";
-      p.confidence = random(["Low", "Medium"]);
+      p.role = "Observer";
+      p.observationQuality = random(["Low", "Medium"]);
+      p.confidence = p.observationQuality;
       p.clue = random([
-        `You believe you saw ${wrong.name} near ${room.incident.location}, but visibility was poor.`,
-        `${wrong.name} looked suspicious around ${room.incident.location}, though you are not completely certain.`,
-        `You remember ${wrong.name} being nearby, but your memory feels fuzzy.`,
-        `You think ${wrong.name} was involved somehow, though you have no proof.`,
-        `${wrong.name} seemed nervous after the incident, but that may not mean anything.`
+        `You believe someone was near ${room.incident.location}, but visibility was poor.`,
+        `Someone looked suspicious after the incident, though you are not completely certain.`,
+        `You remember movement nearby, but your memory feels fuzzy.`,
+        `You think one alibi sounds too clean, though you have no proof.`
       ]);
       p.objective = random([
-        "Defend your memory if challenged, but do not overplay weak information.",
-        "Your clue may be wrong. Try not to become a distraction.",
-        "Help if you can, but remember that confidence matters."
+        "Question clean alibis and listen for contradictions.",
+        "Your information is weak. Use it carefully.",
+        "Help if you can, but do not pretend your observation is stronger than it is."
       ]);
     } else {
-      p.role = "Observer";
-      p.confidence = random(["Low", "Medium"]);
+      p.role = "Drifter";
+      p.observationQuality = random(["Low", "Medium"]);
+      p.confidence = p.observationQuality;
       p.clue = random([
-        `You saw nothing directly, but noticed the room went quiet after the incident.`,
-        `You heard a sound from ${room.incident.location}, but missed who was nearby.`,
+        `You were moving between rooms, so your own alibi may sound messy.`,
+        `You saw people watching each other carefully after the incident.`,
         `You noticed someone changed the topic quickly after ${room.incident.location} was mentioned.`,
-        `You remember tension rising after the incident, but no single person stood out.`,
-        `You saw people watching each other carefully after the incident.`
+        `You remember tension rising after the incident, but no single person stood out.`
       ]);
       p.objective = random([
-        "Watch who contradicts themselves. You can support, challenge, or bluff.",
-        "Stay useful without pretending to know more than you do.",
-        "Read the room and avoid becoming easy suspicion."
+        "Your movement may make you suspicious. Explain yourself clearly.",
+        "Survive suspicion while helping the detective compare timelines.",
+        "Use your messy alibi to bait contradictions from others."
       ]);
     }
+
+    p.abilityName = "Anonymous Tip";
+    p.abilityDescription = "Once per round, send one anonymous tip to push discussion without revealing your name.";
+    p.anonymousTip = generateAnonymousTip(room, p);
   });
 }
 
-function generateAnonymousTip(room, culprit) {
-  const targets = room.players.filter((p) => p.id !== culprit.id);
-  const target = random(targets) || culprit;
-
-  return random([
-    `Someone has not been honest about their timing near ${room.incident.location}.`,
-    `${target.name}'s story does not fully match what happened near ${room.incident.location}.`,
-    `One player is pretending their clue is weaker than it really is.`,
-    `The person who looked calmest after the incident may be hiding the most.`,
-    `${target.name} reacted strangely when ${room.incident.location} was mentioned.`,
-    `The loudest accusation may be covering up a quieter mistake.`
-  ]);
-}
-
-function generateEvidence(room) {
-  const culprit = room.players.find((p) => p.id === room.incident.culpritId);
-  const decoy = random(room.players.filter((p) => p.id !== culprit.id)) || culprit;
-
-  const hardExtra = room.settings.difficulty === "hard"
-    ? [
-        {
-          type: "Contradictory Record",
-          reliability: "Corrupted",
-          text: `A damaged log appears to support both ${culprit.name} and ${decoy.name}.`
-        }
-      ]
-    : [];
-
+function generateInvestigationBoard(room) {
   return [
     {
-      type: "Stable Evidence",
+      type: "Case Fact",
       reliability: "Stable",
-      text: `The incident originated around ${room.incident.location}.`
+      text: `${room.incident.location} is confirmed as the center of the incident.`
     },
     {
-      type: "Partial Timeline",
-      reliability: "Unclear",
-      text: `${culprit.name} appears near the timeline, but the record does not prove intent.`
+      type: "Timeline Fact",
+      reliability: "Stable",
+      text: `The incident happened around ${room.incident.time}, but movement records are incomplete.`
     },
     {
-      type: "Corrupted Signal",
+      type: "Open Lead",
+      reliability: "Questionable",
+      text: `Someone was near ${room.incident.location} close to the incident time. Identity unclear.`
+    },
+    {
+      type: "Alibi Lead",
+      reliability: "Questionable",
+      text: `At least one public alibi may have a timing gap. Compare stories carefully.`
+    },
+    {
+      type: "System Note",
       reliability: "Corrupted",
-      text: `${decoy.name} appears in damaged data. This may be false, partial, or unrelated.`
-    },
-    ...hardExtra
+      text: `Recovered logs are partial. They can support theories, but cannot solve the case alone.`
+    }
   ];
 }
 
 function generateMidEvidence(room) {
-  const culprit = room.players.find((p) => p.id === room.incident.culpritId);
-  const decoy = random(room.players.filter((p) => p.id !== culprit.id)) || culprit;
-
   return random([
     {
-      type: "Recovered Footage",
-      reliability: "Stable",
-      text: `Footage confirms someone left ${room.incident.location} shortly before the incident. The figure resembles ${culprit.name}.`
+      type: "Recovered Movement",
+      reliability: "Questionable",
+      text: `Recovered footage shows movement near ${room.incident.location}. Identity unclear.`
     },
     {
       type: "Audio Fragment",
-      reliability: "Unclear",
-      text: `A recovered audio clip mentions ${decoy.name}, but the context is missing.`
+      reliability: "Questionable",
+      text: `A short audio fragment captured hurried movement, but no clear voice.`
     },
     {
       type: "Corrected Log",
       reliability: "Stable",
-      text: `Earlier corrupted data was partially restored. ${decoy.name}'s connection now looks weaker.`
+      text: `The timeline confirms the incident window, but not who caused it. Alibis still matter most.`
     },
     {
-      type: "New Timeline Detail",
-      reliability: "Unclear",
-      text: `${culprit.name} had a small time gap that has not been explained.`
+      type: "New Lead",
+      reliability: "Questionable",
+      text: `One story may not match the incident timing. Re-question players about where they were.`
     }
+  ]);
+}
+
+function generateSuggestedQuestions(room) {
+  return [
+    `Where were you at ${room.incident.time}?`,
+    `Who can confirm your alibi?`,
+    `Why were you near that area?`,
+    `Did you hear or see anything near ${room.incident.location}?`,
+    `Whose story changed after pressure?`,
+    `Who sounds too certain for a weak observation?`,
+    `Which alibi has the biggest time gap?`
+  ];
+}
+
+function generateAnonymousTip(room, player) {
+  const targets = room.players.filter((p) => p.id !== player.id);
+  const target = random(targets) || player;
+
+  return random([
+    `Someone has not been honest about their timing near ${room.incident.location}.`,
+    `${target.name}'s alibi may not fully match the incident window.`,
+    `One player is pretending their observation is weaker than it really is.`,
+    `The person who looked calmest after the incident may be hiding the most.`,
+    `${target.name} reacted strangely when ${room.incident.location} was mentioned.`,
+    `The cleanest alibi may be the most rehearsed.`,
+    `Someone avoided explaining where they were at ${room.incident.time}.`
   ]);
 }
 
@@ -729,7 +904,8 @@ function publicPlayers(players) {
     id: p.id,
     name: p.name,
     suspicion: p.suspicion || 0,
-    score: p.score || 0
+    score: p.score || 0,
+    publicAlibi: p.publicAlibi || "No alibi yet."
   }));
 }
 
@@ -742,6 +918,7 @@ function emitRoomUpdate(roomId) {
     state: room.state,
     roundNumber: room.roundNumber,
     minPlayers: room.settings.minPlayers,
+    maxPlayers: room.settings.maxPlayers,
     settings: room.settings,
     streamerName: room.streamerName,
     locked: room.locked
@@ -770,11 +947,15 @@ function sanitizeName(name) {
 
 function sanitizeMessage(message) {
   if (!message || typeof message !== "string") return "";
-  return message.trim().slice(0, 140);
+  return message.trim().slice(0, 180);
 }
 
 function random(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function unique(arr) {
+  return [...new Set(arr)];
 }
 
 function clamp(value, min, max) {

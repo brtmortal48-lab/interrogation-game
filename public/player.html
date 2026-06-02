@@ -32,10 +32,25 @@
   </div>
 
   <section class="panel">
+    <h2>📁 Case File</h2>
+    <div id="caseFile" class="card">
+      <p>Waiting for case...</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>🧭 Your Public Alibi</h2>
+    <div class="card">
+      <p id="publicAlibi">Waiting for round...</p>
+      <button onclick="action('alibi')">State My Alibi</button>
+    </div>
+  </section>
+
+  <section class="panel">
     <h2>🎭 Your Secret Role</h2>
     <div class="card">
       <p><b id="role">Waiting...</b></p>
-      <p><b>Confidence:</b> <span id="confidence">--</span></p>
+      <p><b>Observation Quality:</b> <span id="confidence">--</span></p>
       <p id="objective"></p>
     </div>
   </section>
@@ -44,24 +59,38 @@
     <h2>💡 Your Private Observation</h2>
     <div class="card">
       <p id="clue">Waiting for round...</p>
-      <p><b>Public Reveal Version:</b></p>
+
+      <div id="hiddenTruthBox" style="display:none;">
+        <p><b>Hidden Truth:</b></p>
+        <p id="hiddenTruth"></p>
+      </div>
+
+      <p><b>Anonymous Reveal Version:</b></p>
       <p id="revealClue">Waiting for round...</p>
       <p id="token">Reveal Token: Available</p>
     </div>
   </section>
 
   <section class="panel">
+    <h2>⚡ Your Ability</h2>
+    <div class="card">
+      <p><b id="abilityName">Anonymous Tip</b></p>
+      <p id="abilityDescription">Send one anonymous tip to push discussion without revealing your name.</p>
+      <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
+    </div>
+  </section>
+
+  <section class="panel">
     <h2>⚡ Quick Actions</h2>
     <div class="actions">
-      <button onclick="action('claim')">Claim Info</button>
+      <button onclick="action('claim')">Ask Me</button>
       <button onclick="action('defend')">Defend Self</button>
       <button onclick="chooseTarget('doubt')">Doubt Someone</button>
       <button onclick="chooseTarget('accuse')">Accuse Someone</button>
-      <button id="revealBtn" class="danger" onclick="action('reveal')">Use Reveal Token</button>
-      <button id="anonymousBtn" style="display:none;" onclick="action('anonymous')">Send Anonymous Tip</button>
+      <button id="revealBtn" class="danger" onclick="action('reveal')">Reveal Observation Anonymously</button>
     </div>
-    <p id="culpritHint" class="hint" style="display:none;">
-      Culprit ability: Anonymous Tip can be used once per round to create confusion without revealing your name.
+    <p class="hint">
+      Your alibi gives the detective something to question. Your observation may help, mislead, or create suspicion.
     </p>
   </section>
 
@@ -70,11 +99,11 @@
     <div id="chat" class="chat"></div>
 
     <div class="chatInput">
-      <input id="msg" placeholder="Type carefully..." maxlength="140">
+      <input id="msg" placeholder="Type carefully..." maxlength="180">
       <button onclick="send()">Send</button>
     </div>
 
-    <p class="hint">Your clue is an observation, not guaranteed proof.</p>
+    <p class="hint">Press Enter to send. Keep talking, defend your alibi, and challenge contradictions.</p>
   </section>
 </div>
 
@@ -83,22 +112,28 @@
     <button class="closeBtn" onclick="closeHowTo()">×</button>
     <h2>Player Guide</h2>
 
-    <h3>Your Role Is Secret</h3>
-    <p>Only you can see your role, objective, confidence level, and private observation.</p>
+    <h3>Core Idea</h3>
+    <p>Everyone has a public alibi. The detective will question where you were, what you saw, and whether your story matches others.</p>
 
-    <h3>Roles</h3>
+    <h3>Your Role Is Secret</h3>
+    <p>Only you can see your role, objective, observation quality, private observation, and hidden truth if you are the murderer.</p>
+
+    <h3>Current Roles</h3>
     <ul>
-      <li><b>Culprit:</b> Avoid being caught. You receive a fake public reveal clue and one Anonymous Tip.</li>
-      <li><b>Witness:</b> Help the streamer find the truth.</li>
-      <li><b>Misinformed:</b> Your clue may be wrong. Be careful.</li>
-      <li><b>Observer:</b> Read the room, survive, bluff, or help.</li>
+      <li><b>Murderer:</b> Hide your real location, use your fake reveal, and redirect suspicion.</li>
+      <li><b>Witness:</b> You have a stronger observation. Help connect alibis.</li>
+      <li><b>Observer:</b> Your information is weaker. Watch for contradictions.</li>
+      <li><b>Drifter:</b> Your alibi may sound messy. Defend yourself clearly.</li>
     </ul>
 
-    <h3>Reveal Token</h3>
-    <p>You can reveal your public clue once per round. Culprits also get a believable fake reveal clue.</p>
+    <h3>Anonymous Reveal</h3>
+    <p>Your reveal does not show your name. It adds an anonymous observation to the chat.</p>
+
+    <h3>Anonymous Tip</h3>
+    <p>Everyone gets one anonymous tip per round, so using it does not expose your role.</p>
 
     <h3>Pressure</h3>
-    <p>If the streamer pressures you, follow the instruction exactly. You may be forced to answer Yes/No or defend yourself quickly.</p>
+    <p>If the streamer pressures you, follow the instruction exactly. You may be forced to answer Yes/No or defend your alibi quickly.</p>
   </div>
 </div>
 

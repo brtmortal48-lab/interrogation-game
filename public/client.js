@@ -66,14 +66,19 @@ socket.on("roundStarted", (data) => {
   players = data.players || [];
 
   document.getElementById("roundNumber").innerText = data.roundNumber;
-  document.getElementById("timer").innerText = formatTime(data.timeLeft);
+  document.getElementById("timer").innerText = data.unlimitedTime ? "∞" : formatTime(data.timeLeft);
   document.getElementById("status").innerText = "Playing";
   document.getElementById("chat").innerHTML = "";
   document.getElementById("token").innerText = "Reveal Token: Available";
   document.getElementById("revealBtn").disabled = false;
 
   const anonymousBtn = document.getElementById("anonymousBtn");
-  if (anonymousBtn) anonymousBtn.disabled = false;
+  if (anonymousBtn) {
+    anonymousBtn.disabled = false;
+    anonymousBtn.innerText = "Send Anonymous Tip";
+  }
+
+  renderCaseFile(data.caseFile);
 
   hidePressure();
 });
@@ -81,22 +86,28 @@ socket.on("roundStarted", (data) => {
 socket.on("privateData", (data) => {
   currentRole = data.role || "";
 
-  document.getElementById("role").innerText = data.role;
-  document.getElementById("clue").innerText = data.clue;
-  document.getElementById("revealClue").innerText = data.revealClue || data.clue;
-  document.getElementById("confidence").innerText = data.confidence;
-  document.getElementById("objective").innerText = data.objective;
+  document.getElementById("role").innerText = data.role || "Waiting...";
+  document.getElementById("publicAlibi").innerText = data.publicAlibi || "Waiting for round...";
+  document.getElementById("clue").innerText = data.clue || "Waiting for round...";
+  document.getElementById("revealClue").innerText = data.revealClue || data.clue || "Waiting for round...";
+  document.getElementById("confidence").innerText = data.observationQuality || data.confidence || "--";
+  document.getElementById("objective").innerText = data.objective || "";
+  document.getElementById("abilityName").innerText = data.abilityName || "Anonymous Tip";
+  document.getElementById("abilityDescription").innerText =
+    data.abilityDescription || "Send one anonymous tip to push discussion without revealing your name.";
 
-  const anonymousBtn = document.getElementById("anonymousBtn");
-  const culpritHint = document.getElementById("culpritHint");
+  const hiddenTruthBox = document.getElementById("hiddenTruthBox");
+  const hiddenTruth = document.getElementById("hiddenTruth");
 
-  if (data.canUseAnonymous) {
-    anonymousBtn.style.display = "inline-block";
-    culpritHint.style.display = "block";
+  if (data.hiddenTruth) {
+    hiddenTruthBox.style.display = "block";
+    hiddenTruth.innerText = data.hiddenTruth;
   } else {
-    anonymousBtn.style.display = "none";
-    culpritHint.style.display = "none";
+    hiddenTruthBox.style.display = "none";
+    hiddenTruth.innerText = "";
   }
+
+  renderCaseFile(data.caseFile);
 });
 
 socket.on("anonymousUsed", () => {
@@ -116,7 +127,7 @@ socket.on("revealTokenUsed", () => {
 });
 
 socket.on("timerUpdate", (timeLeft) => {
-  document.getElementById("timer").innerText = formatTime(timeLeft);
+  document.getElementById("timer").innerText = timeLeft === 0 ? "∞" : formatTime(timeLeft);
 });
 
 socket.on("newMessage", (data) => {
@@ -143,7 +154,7 @@ socket.on("roundState", (data) => {
 
 socket.on("interrogated", () => {
   document.getElementById("status").innerText = "You are being interrogated!";
-  addSystemMessage("The streamer is questioning you. Be careful.");
+  addSystemMessage("The streamer is questioning you. Defend your alibi carefully.");
 });
 
 socket.on("pressure", (data) => {
@@ -167,7 +178,7 @@ socket.on("accusation", (data) => {
 
 socket.on("reveal", (data) => {
   addSystemMessage(
-    `Reveal: ${data.success ? "Streamer was correct." : "Culprit escaped."} Culprit: ${data.culpritName}.`
+    `Reveal: ${data.success ? "Detective was correct." : "Murderer escaped."} Murderer: ${data.culpritName}.`
   );
 
   document.getElementById("status").innerText = "Round ended";
@@ -196,6 +207,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+function renderCaseFile(caseFile) {
+  const box = document.getElementById("caseFile");
+  if (!box || !caseFile) return;
+
+  box.innerHTML = `
+    <h3>${escapeHtml(caseFile.title)}</h3>
+    <p><b>Location:</b> ${escapeHtml(caseFile.location)}</p>
+    <p><b>Time:</b> ${escapeHtml(caseFile.time)}</p>
+    <p><b>Incident:</b> ${escapeHtml(caseFile.incident)}</p>
+    <p>${escapeHtml(caseFile.atmosphere)}</p>
+    <p><b>Known Facts:</b></p>
+    <ul>
+      ${(caseFile.knownFacts || []).map(fact => `<li>${escapeHtml(fact)}</li>`).join("")}
+    </ul>
+  `;
+}
 
 function hidePressure() {
   const box = document.getElementById("pressureBox");
