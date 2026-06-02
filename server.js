@@ -24,7 +24,6 @@ io.on("connection", (socket) => {
     while (rooms[roomId]) roomId = generateRoomCode();
 
     const hostKey = generateHostKey();
-
     rooms[roomId] = createRoom(hostKey);
 
     socket.emit("roomCreated", { roomId, hostKey });
@@ -76,10 +75,12 @@ io.on("connection", (socket) => {
         lastMessageAt: 0,
         role: null,
         clue: null,
+        fakeRevealClue: null,
         confidence: null,
         objective: null,
         suspicion: 0,
         revealedClue: false,
+        anonymousUsed: false,
         score: 0,
         pressure: null
       });
@@ -189,6 +190,35 @@ io.on("connection", (socket) => {
     if (action === "doubt") text = `I doubt ${targetName}'s story.`;
     if (action === "accuse") text = `I think ${targetName} is hiding something.`;
 
+    if (action === "anonymous") {
+      if (player.role !== "Culprit") {
+        socket.emit("systemMessage", "Only the culprit can use Anonymous Tip.");
+        return;
+      }
+
+      if (player.anonymousUsed) {
+        socket.emit("systemMessage", "You already used your Anonymous Tip this round.");
+        return;
+      }
+
+      player.anonymousUsed = true;
+
+      const anonymousText = generateAnonymousTip(room, player);
+
+      io.to(roomId).emit("newMessage", {
+        playerId: "anonymous",
+        name: "Anonymous Tip",
+        message: anonymousText,
+        tag: "ANONYMOUS",
+        time: new Date().toLocaleTimeString()
+      });
+
+      io.to(player.id).emit("anonymousUsed");
+
+      io.to(roomId).emit("systemMessage", "A suspicious anonymous tip has appeared.");
+      return;
+    }
+
     if (action === "reveal") {
       if (player.revealedClue) {
         socket.emit("systemMessage", "You already used your reveal token.");
@@ -196,7 +226,13 @@ io.on("connection", (socket) => {
       }
 
       player.revealedClue = true;
-      text = `I reveal my clue: "${player.clue}" Confidence: ${player.confidence}.`;
+
+      const revealClue = player.role === "Culprit" && player.fakeRevealClue
+        ? player.fakeRevealClue
+        : player.clue;
+
+      text = `I reveal my clue: "${revealClue}" Confidence: ${player.confidence}.`;
+
       io.to(player.id).emit("revealTokenUsed");
     }
 
@@ -232,13 +268,16 @@ io.on("connection", (socket) => {
     room.players.forEach((p) => {
       p.suspicion = 0;
       p.revealedClue = false;
+      p.anonymousUsed = false;
       p.pressure = null;
 
       io.to(p.id).emit("privateData", {
         role: p.role,
         clue: p.clue,
+        revealClue: p.role === "Culprit" && p.fakeRevealClue ? p.fakeRevealClue : p.clue,
         confidence: p.confidence,
-        objective: p.objective
+        objective: p.objective,
+        canUseAnonymous: p.role === "Culprit"
       });
 
       io.to(p.id).emit("roundState", {
@@ -423,6 +462,7 @@ io.on("connection", (socket) => {
         name: p.name,
         role: p.role,
         clue: p.clue,
+        fakeRevealClue: p.fakeRevealClue,
         confidence: p.confidence,
         suspicion: p.suspicion,
         score: p.score,
@@ -517,13 +557,35 @@ function assignRolesAndClues(room) {
       `You noticed people acting nervous after the incident.`,
       `You remember a noise, but the timing is unclear.`
     ]);
+    p.fakeRevealClue = null;
     p.objective = "Stay calm, observe contradictions, and avoid becoming the easiest accusation.";
   });
 
+  const frameTarget = random(others) || culprit;
+  const decoyTarget = random(others.filter((p) => p.id !== frameTarget.id)) || frameTarget;
+
   culprit.role = "Culprit";
-  culprit.confidence = "High";
-  culprit.clue = `You were connected to what happened at ${room.incident.location}. Your job is to make that connection look harmless.`;
-  culprit.objective = "Avoid accusation. Redirect suspicion without looking desperate.";
+  culprit.confidence = random(["Medium", "High"]);
+  culprit.clue = random([
+    `Truth: you caused the incident at ${room.incident.location}. Do not reveal this. Push suspicion away from yourself.`,
+    `Truth: your timing does not match the official evidence. Stay calm and make another player look less reliable.`,
+    `Truth: you know exactly why the incident happened. Your job is to make the detective chase the wrong pattern.`
+  ]);
+
+  culprit.fakeRevealClue = random([
+    `You heard someone moving near ${room.incident.location}, but you could not identify who it was.`,
+    `You saw ${frameTarget.name} acting nervous after the incident, but you are not fully sure why.`,
+    `You noticed ${decoyTarget.name} was unusually quiet when the incident was mentioned.`,
+    `You remember a sound from ${room.incident.location}, but the timing felt confusing.`,
+    `You saw people gathering near ${room.incident.location}, but nothing clearly proved who caused it.`
+  ]);
+
+  culprit.objective = random([
+    `Avoid accusation. Secret goal: make ${frameTarget.name} look suspicious without seeming desperate. You also have one Anonymous Tip ability.`,
+    `Avoid accusation. Secret goal: make at least one witness look unreliable. You also have one Anonymous Tip ability.`,
+    `Avoid accusation. Secret goal: get two other players arguing with each other. You also have one Anonymous Tip ability.`,
+    `Avoid accusation. Secret goal: reveal your fake clue at the perfect moment to look helpful. You also have one Anonymous Tip ability.`
+  ]);
 
   others.forEach((p, i) => {
     if (i % 3 === 0) {
@@ -556,6 +618,20 @@ function assignRolesAndClues(room) {
       p.objective = "Watch who contradicts themselves. You can bluff, support, or challenge others.";
     }
   });
+}
+
+function generateAnonymousTip(room, culprit) {
+  const targets = room.players.filter((p) => p.id !== culprit.id);
+  const target = random(targets) || culprit;
+
+  return random([
+    `Someone has not been honest about their timing near ${room.incident.location}.`,
+    `${target.name}'s story does not fully match what happened near ${room.incident.location}.`,
+    `One player is pretending their clue is weaker than it really is.`,
+    `The person who looked calmest after the incident may be hiding the most.`,
+    `${target.name} reacted strangely when ${room.incident.location} was mentioned.`,
+    `The loudest accusation may be covering up a quieter mistake.`
+  ]);
 }
 
 function generateEvidence(room) {

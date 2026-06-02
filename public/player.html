@@ -44,6 +44,8 @@
     <h2>💡 Your Private Observation</h2>
     <div class="card">
       <p id="clue">Waiting for round...</p>
+      <p><b>Public Reveal Version:</b></p>
+      <p id="revealClue">Waiting for round...</p>
       <p id="token">Reveal Token: Available</p>
     </div>
   </section>
@@ -56,7 +58,11 @@
       <button onclick="chooseTarget('doubt')">Doubt Someone</button>
       <button onclick="chooseTarget('accuse')">Accuse Someone</button>
       <button id="revealBtn" class="danger" onclick="action('reveal')">Use Reveal Token</button>
+      <button id="anonymousBtn" style="display:none;" onclick="action('anonymous')">Send Anonymous Tip</button>
     </div>
+    <p id="culpritHint" class="hint" style="display:none;">
+      Culprit ability: Anonymous Tip can be used once per round to create confusion without revealing your name.
+    </p>
   </section>
 
   <section class="panel wide">
@@ -82,14 +88,14 @@
 
     <h3>Roles</h3>
     <ul>
-      <li><b>Culprit:</b> Avoid being caught. Redirect suspicion carefully.</li>
+      <li><b>Culprit:</b> Avoid being caught. You receive a fake public reveal clue and one Anonymous Tip.</li>
       <li><b>Witness:</b> Help the streamer find the truth.</li>
       <li><b>Misinformed:</b> Your clue may be wrong. Be careful.</li>
       <li><b>Observer:</b> Read the room, survive, bluff, or help.</li>
     </ul>
 
     <h3>Reveal Token</h3>
-    <p>You can reveal your private clue once per round. Use it at the right moment.</p>
+    <p>You can reveal your public clue once per round. Culprits also get a believable fake reveal clue.</p>
 
     <h3>Pressure</h3>
     <p>If the streamer pressures you, follow the instruction exactly. You may be forced to answer Yes/No or defend yourself quickly.</p>

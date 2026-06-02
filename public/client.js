@@ -3,6 +3,7 @@ const socket = io();
 let roomId = "";
 let name = "";
 let players = [];
+let currentRole = "";
 
 window.onload = () => {
   const params = new URLSearchParams(window.location.search);
@@ -71,14 +72,42 @@ socket.on("roundStarted", (data) => {
   document.getElementById("token").innerText = "Reveal Token: Available";
   document.getElementById("revealBtn").disabled = false;
 
+  const anonymousBtn = document.getElementById("anonymousBtn");
+  if (anonymousBtn) anonymousBtn.disabled = false;
+
   hidePressure();
 });
 
 socket.on("privateData", (data) => {
+  currentRole = data.role || "";
+
   document.getElementById("role").innerText = data.role;
   document.getElementById("clue").innerText = data.clue;
+  document.getElementById("revealClue").innerText = data.revealClue || data.clue;
   document.getElementById("confidence").innerText = data.confidence;
   document.getElementById("objective").innerText = data.objective;
+
+  const anonymousBtn = document.getElementById("anonymousBtn");
+  const culpritHint = document.getElementById("culpritHint");
+
+  if (data.canUseAnonymous) {
+    anonymousBtn.style.display = "inline-block";
+    culpritHint.style.display = "block";
+  } else {
+    anonymousBtn.style.display = "none";
+    culpritHint.style.display = "none";
+  }
+});
+
+socket.on("anonymousUsed", () => {
+  const anonymousBtn = document.getElementById("anonymousBtn");
+
+  if (anonymousBtn) {
+    anonymousBtn.disabled = true;
+    anonymousBtn.innerText = "Anonymous Tip Used";
+  }
+
+  addSystemMessage("Your anonymous tip was sent.");
 });
 
 socket.on("revealTokenUsed", () => {
@@ -146,6 +175,28 @@ socket.on("reveal", (data) => {
   hidePressure();
 });
 
+socket.on("joinError", (message) => {
+  alert(message);
+});
+
+socket.on("kicked", (message) => {
+  alert(message);
+  location.href = "/";
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const msgInput = document.getElementById("msg");
+
+  if (msgInput) {
+    msgInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        send();
+      }
+    });
+  }
+});
+
 function hidePressure() {
   const box = document.getElementById("pressureBox");
 
@@ -184,25 +235,3 @@ function openHowTo() {
 function closeHowTo() {
   document.getElementById("howToModal").style.display = "none";
 }
-
-socket.on("joinError", (message) => {
-  alert(message);
-});
-
-socket.on("kicked", (message) => {
-  alert(message);
-  location.href = "/";
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const msgInput = document.getElementById("msg");
-
-  if (msgInput) {
-    msgInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        send();
-      }
-    });
-  }
-});
