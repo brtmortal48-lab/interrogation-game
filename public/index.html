@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Interrogation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="homeBody">
+
+<button class="helpBtn" onclick="openHowTo()">How to Play</button>
+<button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
+
+<div class="hero">
+  <div class="heroBadge">LIVE SOCIAL DEDUCTION GAME</div>
+
+  <h1>The Interrogation</h1>
+
+  <p class="heroSubtitle">
+    A streamer-friendly mystery game where one detective questions real players,
+    reads unreliable clues, and exposes the culprit live.
+  </p>
+
+  <p class="creatorCredit">
+    Created by <b>Zameerul Haq</b> from Sri Lanka
+  </p>
+
+  <div class="heroActions">
+    <button class="bigBtn" onclick="createRoom()">Create Room</button>
+    <a class="ghostBtn" href="#join">Join Existing Room</a>
+  </div>
+</div>
+
+<div class="featureStrip">
+  <div>🎭 Hidden Roles</div>
+  <div>🧾 Unreliable Evidence</div>
+  <div>🎥 OBS Overlay</div>
+  <div>💬 Live Interrogation</div>
+</div>
+
+<div id="join" class="landing">
+  <div class="landingGrid">
+    <div class="panel premiumPanel">
+      <h2>Host a Game</h2>
+      <p>Create a private locked room, invite players, and stream the detective dashboard.</p>
+      <button onclick="createRoom()">Create Room</button>
+      <div id="createdRoom" class="createdRoom"></div>
+    </div>
+
+    <div class="panel premiumPanel">
+      <h2>Join a Game</h2>
+      <p>Enter a room code from the streamer or your Discord party.</p>
+      <input id="joinRoomCode" placeholder="Room code">
+      <button onclick="joinPlayer()">Join as Player</button>
+      <button onclick="joinStreamer()">Join as Streamer</button>
+      <p class="hint">Streamer rooms are locked by default. Use the private host link if you are the streamer.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="footerCredit">
+  The Interrogation — developed by Zameerul Haq, Sri Lanka.
+</footer>
+
+<div id="howToModal" class="modalOverlay" style="display:none;">
+  <div class="modal">
+    <button class="closeBtn" onclick="closeHowTo()">×</button>
+    <h2>How to Play</h2>
+
+    <h3>Streamer</h3>
+    <p>You are the detective. Read evidence, question players, build a theory, pressure suspects, then accuse one player before revealing the truth.</p>
+
+    <h3>Players</h3>
+    <p>Each player gets a secret role and private observation. Your clue may be true, incomplete, or misleading.</p>
+
+    <h3>Goal</h3>
+    <p>The culprit tries to escape. Witnesses try to help. Misinformed players may accidentally mislead. Observers survive by reading the room.</p>
+  </div>
+</div>
+
+<div id="contactModal" class="modalOverlay" style="display:none;">
+  <div class="modal contactModal">
+    <button class="closeBtn" onclick="closeContact()">×</button>
+    <h2>Contact Developer</h2>
+
+    <div class="contactRow">
+      <b>Developer</b>
+      <p>Zameerul Haq</p>
+    </div>
+
+    <div class="contactRow">
+      <b>Email</b>
+      <p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p>
+    </div>
+
+    <div class="contactRow">
+      <b>Country</b>
+      <p>Sri Lanka</p>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+function createRoom() {
+  socket.emit("createRoom");
+}
+
+socket.on("roomCreated", ({ roomId, hostKey }) => {
+  const playerLink = `${window.location.origin}/player.html?room=${roomId}`;
+  const streamerLink = `${window.location.origin}/streamer.html?room=${roomId}&host=${hostKey}`;
+  const overlayLink = `${window.location.origin}/overlay.html?room=${roomId}`;
+
+  document.getElementById("createdRoom").innerHTML = `
+    <h3>Room Created: ${roomId}</h3>
+    <p class="lockNotice">🔒 Streamer room is locked. Keep the private streamer link safe.</p>
+
+    <p><b>Player Invite Link:</b></p>
+    <input id="playerInvite" value="${playerLink}" readonly>
+    <button onclick="copyText('playerInvite')">Copy Player Link</button>
+
+    <p><b>Private Streamer Host Link:</b></p>
+    <input id="streamerInvite" value="${streamerLink}" readonly>
+    <button onclick="copyText('streamerInvite')">Copy Host Link</button>
+
+    <p><b>OBS Overlay Link:</b></p>
+    <input id="overlayInvite" value="${overlayLink}" readonly>
+    <button onclick="copyText('overlayInvite')">Copy Overlay Link</button>
+
+    <p>
+      <a class="linkBtn" href="${streamerLink}">Open Streamer Panel</a>
+    </p>
+  `;
+});
+
+function joinPlayer() {
+  const code = document.getElementById("joinRoomCode").value.trim().toUpperCase();
+  if (!code) return alert("Enter room code.");
+  window.location.href = `/player.html?room=${code}`;
+}
+
+function joinStreamer() {
+  const code = document.getElementById("joinRoomCode").value.trim().toUpperCase();
+  if (!code) return alert("Enter room code.");
+  window.location.href = `/streamer.html?room=${code}`;
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  el.select();
+  el.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(el.value);
+}
+
+function openHowTo() {
+  document.getElementById("howToModal").style.display = "flex";
+}
+
+function closeHowTo() {
+  document.getElementById("howToModal").style.display = "none";
+}
+
+function openContact() {
+  document.getElementById("contactModal").style.display = "flex";
+}
+
+function closeContact() {
+  document.getElementById("contactModal").style.display = "none";
+}
+</script>
+
+</body>
+</html>

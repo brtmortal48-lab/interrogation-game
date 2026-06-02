@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Interrogation - Streamer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="helpBtn" onclick="openHowTo()">How to Play</button>
+<button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
+
+<h1>🎥 The Interrogation</h1>
+<p class="creatorSmall">Created by Zameerul Haq • Sri Lanka</p>
+
+<div class="topbar">
+  <input id="streamerName" placeholder="Streamer name">
+  <input id="room" placeholder="Room ID">
+  <button onclick="join()">Join as Streamer</button>
+  <button id="startBtn" onclick="startRound()">Start Round</button>
+  <button class="danger" onclick="reveal()">Reveal</button>
+</div>
+
+<div class="inviteBox">
+  <b>Player Invite:</b>
+  <input id="inviteLink" readonly>
+  <button onclick="copyInvite()">Copy Player Link</button>
+
+  <b>OBS Overlay:</b>
+  <input id="overlayLink" readonly>
+  <button onclick="copyOverlay()">Copy Overlay Link</button>
+</div>
+
+<div class="panel lockPanel">
+  <span>Room Lock: <b id="lockState">Locked</b></span>
+  <button onclick="toggleRoomLock()">Toggle Lock</button>
+  <small>Locked rooms only allow the private host link to join as streamer.</small>
+</div>
+
+<div class="panel collapsibleSettings">
+  <details>
+    <summary>Room & Audio Settings</summary>
+
+    <div class="settingsGrid">
+      <label>Min Players <input id="minPlayers" type="number" min="2" max="30" value="2"></label>
+      <label>Round Time <input id="roundTime" type="number" min="60" max="600" value="210"></label>
+      <label>Cooldown ms <input id="cooldown" type="number" min="1000" max="15000" value="4000"></label>
+
+      <label>Difficulty
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+
+      <label>Music Style
+        <select id="musicStyle" onchange="restartMusicIfOn()">
+          <option value="spaceSuspense" selected>Space Suspense</option>
+          <option value="cozyLobby">Cozy Lobby</option>
+          <option value="warmMystery">Warm Mystery</option>
+          <option value="softNight">Soft Night</option>
+          <option value="differentTempo">Different Tempo</option>
+        </select>
+      </label>
+
+      <button onclick="saveSettings()">Save Settings</button>
+      <button onclick="toggleSound()">SFX: <span id="soundState">On</span></button>
+      <button onclick="toggleMusic()">Music: <span id="musicState">Off</span></button>
+
+      <label>Music Volume
+        <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)">
+      </label>
+    </div>
+  </details>
+</div>
+
+<div class="status">
+  <span>Detective: <b id="detectiveLabel">--</b></span>
+  <span>Room: <b id="roomLabel">--</b></span>
+  <span>Players: <b id="playerCount">0 / 2</b></span>
+  <span>Round: <b id="roundNumber">0</b></span>
+  <span>Timer: <b id="timer">--</b></span>
+  <span>Accused: <b id="accused">None</b></span>
+  <span>Spotlight: <b id="spotlight">None</b></span>
+</div>
+
+<div id="lobbyPlayers" class="panel">
+  <h2>Lobby Players</h2>
+  <div id="lobbyList">No players yet.</div>
+</div>
+
+<div id="incident" class="incident">Waiting for incident...</div>
+
+<div class="streamerMainLayout">
+  <div class="streamerLeft">
+    <section class="panel">
+      <h2>🧾 Evidence Board</h2>
+      <div id="evidence"></div>
+    </section>
+
+    <section class="panel">
+      <h2>👥 Suspects</h2>
+      <p class="hint">Use More only when you need pressure tools or moderation.</p>
+      <div id="players"></div>
+    </section>
+  </div>
+
+  <div class="streamerRight">
+    <section class="panel">
+      <h2>🧠 Theory Board</h2>
+
+      <div class="theoryCol trusted">
+        <h3>Trusted</h3>
+        <div id="trustedBoard"></div>
+      </div>
+
+      <div class="theoryCol suspicious">
+        <h3>Suspicious</h3>
+        <div id="suspiciousBoard"></div>
+      </div>
+
+      <div class="theoryCol prime">
+        <h3>Prime Suspect</h3>
+        <div id="primeBoard"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>💬 Live Statements</h2>
+      <div id="chat" class="chat sideChat"></div>
+    </section>
+  </div>
+</div>
+
+<div id="result" class="result"></div>
+
+<div id="howToModal" class="modalOverlay" style="display:none;">
+  <div class="modal">
+    <button class="closeBtn" onclick="closeHowTo()">×</button>
+    <h2>Streamer Guide</h2>
+    <ol>
+      <li>Read the evidence board.</li>
+      <li>Question players and watch contradictions.</li>
+      <li>Use suspicion, pressure, and theory board.</li>
+      <li>Accuse one player.</li>
+      <li>Reveal the truth.</li>
+    </ol>
+  </div>
+</div>
+
+<div id="contactModal" class="modalOverlay" style="display:none;">
+  <div class="modal contactModal">
+    <button class="closeBtn" onclick="closeContact()">×</button>
+    <h2>Contact Developer</h2>
+
+    <div class="contactRow">
+      <b>Developer</b>
+      <p>Zameerul Haq</p>
+    </div>
+
+    <div class="contactRow">
+      <b>Email</b>
+      <p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p>
+    </div>
+
+    <div class="contactRow">
+      <b>Country</b>
+      <p>Sri Lanka</p>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="streamer.js"></script>
+
+</body>
+</html>

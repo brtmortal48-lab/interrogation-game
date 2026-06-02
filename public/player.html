@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Interrogation - Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="helpBtn" onclick="openHowTo()">How to Play</button>
+
+<h1>👤 Player Console</h1>
+
+<div class="topbar">
+  <input id="name" placeholder="Your name">
+  <input id="room" placeholder="Room ID">
+  <button onclick="join()">Join</button>
+</div>
+
+<div id="joinHint" class="inviteBox">
+  Enter your name and join the room.
+</div>
+
+<div id="pressureBox" class="pressureBox" style="display:none;"></div>
+
+<div id="game" style="display:none;">
+  <div class="status">
+    <span>Room: <b id="roomLabel">--</b></span>
+    <span>Round: <b id="roundNumber">0</b></span>
+    <span>Timer: <b id="timer">--</b></span>
+    <span>Status: <b id="status">Waiting</b></span>
+  </div>
+
+  <section class="panel">
+    <h2>🎭 Your Secret Role</h2>
+    <div class="card">
+      <p><b id="role">Waiting...</b></p>
+      <p><b>Confidence:</b> <span id="confidence">--</span></p>
+      <p id="objective"></p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>💡 Your Private Observation</h2>
+    <div class="card">
+      <p id="clue">Waiting for round...</p>
+      <p id="token">Reveal Token: Available</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>⚡ Quick Actions</h2>
+    <div class="actions">
+      <button onclick="action('claim')">Claim Info</button>
+      <button onclick="action('defend')">Defend Self</button>
+      <button onclick="chooseTarget('doubt')">Doubt Someone</button>
+      <button onclick="chooseTarget('accuse')">Accuse Someone</button>
+      <button id="revealBtn" class="danger" onclick="action('reveal')">Use Reveal Token</button>
+    </div>
+  </section>
+
+  <section class="panel wide">
+    <h2>💬 In-Game Chat</h2>
+    <div id="chat" class="chat"></div>
+
+    <div class="chatInput">
+      <input id="msg" placeholder="Type carefully..." maxlength="140">
+      <button onclick="send()">Send</button>
+    </div>
+
+    <p class="hint">Your clue is an observation, not guaranteed proof.</p>
+  </section>
+</div>
+
+<div id="howToModal" class="modalOverlay" style="display:none;">
+  <div class="modal">
+    <button class="closeBtn" onclick="closeHowTo()">×</button>
+    <h2>Player Guide</h2>
+
+    <h3>Your Role Is Secret</h3>
+    <p>Only you can see your role, objective, confidence level, and private observation.</p>
+
+    <h3>Roles</h3>
+    <ul>
+      <li><b>Culprit:</b> Avoid being caught. Redirect suspicion carefully.</li>
+      <li><b>Witness:</b> Help the streamer find the truth.</li>
+      <li><b>Misinformed:</b> Your clue may be wrong. Be careful.</li>
+      <li><b>Observer:</b> Read the room, survive, bluff, or help.</li>
+    </ul>
+
+    <h3>Reveal Token</h3>
+    <p>You can reveal your private clue once per round. Use it at the right moment.</p>
+
+    <h3>Pressure</h3>
+    <p>If the streamer pressures you, follow the instruction exactly. You may be forced to answer Yes/No or defend yourself quickly.</p>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
+
+</body>
+</html>

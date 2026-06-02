@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Interrogation Overlay</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="overlayBody">
+
+<div class="broadcastOverlay">
+  <div class="broadcastTop">
+    <div>
+      <div class="broadcastLabel">LIVE CASE</div>
+      <h1>The Interrogation</h1>
+    </div>
+
+    <div class="broadcastTimer">
+      <span>ROUND <b id="roundNumber">0</b></span>
+      <strong id="timer">--</strong>
+    </div>
+  </div>
+
+  <div class="overlayRoom">
+    <input id="room" placeholder="Room Code">
+    <button onclick="joinOverlay()">Connect Overlay</button>
+  </div>
+
+  <div class="broadcastCase">
+    <div class="caseTitle">Current Incident</div>
+    <div id="incident">Waiting for incident...</div>
+  </div>
+
+  <div class="broadcastStatusGrid">
+    <div class="broadcastCard">
+      <span>Players</span>
+      <b id="playerCount">0</b>
+    </div>
+
+    <div class="broadcastCard dangerCard">
+      <span>Accused</span>
+      <b id="accused">None</b>
+    </div>
+
+    <div class="broadcastCard">
+      <span>Audience Focus</span>
+      <b id="focus">Watching</b>
+    </div>
+  </div>
+
+  <div id="twist" class="broadcastTwist"></div>
+
+  <div class="broadcastGrid">
+    <section class="broadcastPanel">
+      <h2>Top Suspects</h2>
+      <div id="susBoard"></div>
+    </section>
+
+    <section class="broadcastPanel">
+      <h2>Live Statements</h2>
+      <div id="liveStatements"></div>
+    </section>
+  </div>
+
+  <div id="result" class="broadcastResult"></div>
+
+  <div class="broadcastFooter">
+    Created by Zameerul Haq • Sri Lanka
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="overlay.js"></script>
+
+</body>
+</html>
