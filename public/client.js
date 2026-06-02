@@ -45,6 +45,15 @@ function action(actionName, targetId = null) {
   socket.emit("playerAction", { roomId, action: actionName, targetId });
 }
 
+function useAbility() {
+  if (currentRole === "Guard" || currentRole === "Lawyer") {
+    chooseTarget("ability");
+    return;
+  }
+
+  action("ability");
+}
+
 function chooseTarget(actionName) {
   if (!players.length) return alert("No players yet.");
 
@@ -78,6 +87,14 @@ socket.on("roundStarted", (data) => {
     anonymousBtn.innerText = "Send Anonymous Tip";
   }
 
+  const abilityBtn = document.getElementById("abilityBtn");
+  if (abilityBtn) {
+    abilityBtn.disabled = false;
+    abilityBtn.innerText = "Use Special Ability";
+  }
+
+  document.getElementById("abilityStatus").innerText = "Ability: Available";
+
   renderCaseFile(data.caseFile);
 
   hidePressure();
@@ -92,9 +109,9 @@ socket.on("privateData", (data) => {
   document.getElementById("revealClue").innerText = data.revealClue || data.clue || "Waiting for round...";
   document.getElementById("confidence").innerText = data.observationQuality || data.confidence || "--";
   document.getElementById("objective").innerText = data.objective || "";
-  document.getElementById("abilityName").innerText = data.abilityName || "Anonymous Tip";
+  document.getElementById("abilityName").innerText = data.abilityName || "Special Ability";
   document.getElementById("abilityDescription").innerText =
-    data.abilityDescription || "Send one anonymous tip to push discussion without revealing your name.";
+    data.abilityDescription || "Your role ability will appear when the round starts.";
 
   const hiddenTruthBox = document.getElementById("hiddenTruthBox");
   const hiddenTruth = document.getElementById("hiddenTruth");
@@ -119,6 +136,18 @@ socket.on("anonymousUsed", () => {
   }
 
   addSystemMessage("Your anonymous tip was sent.");
+});
+
+socket.on("abilityUsed", () => {
+  const abilityBtn = document.getElementById("abilityBtn");
+
+  if (abilityBtn) {
+    abilityBtn.disabled = true;
+    abilityBtn.innerText = "Ability Used";
+  }
+
+  document.getElementById("abilityStatus").innerText = "Ability: Used";
+  addSystemMessage("Your special ability was used.");
 });
 
 socket.on("revealTokenUsed", () => {

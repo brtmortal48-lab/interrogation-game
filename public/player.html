@@ -74,9 +74,11 @@
   <section class="panel">
     <h2>⚡ Your Ability</h2>
     <div class="card">
-      <p><b id="abilityName">Anonymous Tip</b></p>
-      <p id="abilityDescription">Send one anonymous tip to push discussion without revealing your name.</p>
+      <p><b id="abilityName">Special Ability</b></p>
+      <p id="abilityDescription">Your ability will appear when the round starts.</p>
+      <button id="abilityBtn" onclick="useAbility()">Use Special Ability</button>
       <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
+      <p id="abilityStatus" class="hint">Ability: Available</p>
     </div>
   </section>
 
@@ -90,7 +92,7 @@
       <button id="revealBtn" class="danger" onclick="action('reveal')">Reveal Observation Anonymously</button>
     </div>
     <p class="hint">
-      Your alibi gives the detective something to question. Your observation may help, mislead, or create suspicion.
+      Your alibi gives the detective something to question. Your role ability can shift suspicion, create noise, or add pressure.
     </p>
   </section>
 
@@ -115,15 +117,18 @@
     <h3>Core Idea</h3>
     <p>Everyone has a public alibi. The detective will question where you were, what you saw, and whether your story matches others.</p>
 
-    <h3>Your Role Is Secret</h3>
-    <p>Only you can see your role, objective, observation quality, private observation, and hidden truth if you are the murderer.</p>
-
-    <h3>Current Roles</h3>
+    <h3>Roles</h3>
     <ul>
-      <li><b>Murderer:</b> Hide your real location, use your fake reveal, and redirect suspicion.</li>
-      <li><b>Witness:</b> You have a stronger observation. Help connect alibis.</li>
-      <li><b>Observer:</b> Your information is weaker. Watch for contradictions.</li>
-      <li><b>Drifter:</b> Your alibi may sound messy. Defend yourself clearly.</li>
+      <li><b>Murderer:</b> Hide your real location and plant a false lead.</li>
+      <li><b>Accomplice:</b> Help the murderer survive without looking coordinated.</li>
+      <li><b>Witness:</b> Push a stronger observation.</li>
+      <li><b>Observer:</b> Watch contradictions and use anonymous notes.</li>
+      <li><b>Drifter:</b> Your messy movement can confuse the timeline.</li>
+      <li><b>Guard:</b> Protect a player’s alibi and reduce suspicion.</li>
+      <li><b>Journalist:</b> Publish an anonymous report.</li>
+      <li><b>Informant:</b> Receive a private hint.</li>
+      <li><b>Lawyer:</b> Defend someone and reduce suspicion.</li>
+      <li><b>Analyst:</b> Publish system-style analysis.</li>
     </ul>
 
     <h3>Anonymous Reveal</h3>
@@ -131,9 +136,6 @@
 
     <h3>Anonymous Tip</h3>
     <p>Everyone gets one anonymous tip per round, so using it does not expose your role.</p>
-
-    <h3>Pressure</h3>
-    <p>If the streamer pressures you, follow the instruction exactly. You may be forced to answer Yes/No or defend your alibi quickly.</p>
   </div>
 </div>
 
