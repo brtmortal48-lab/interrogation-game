@@ -214,7 +214,6 @@ io.on("connection", (socket) => {
       });
 
       io.to(player.id).emit("anonymousUsed");
-
       io.to(roomId).emit("systemMessage", "A suspicious anonymous tip has appeared.");
       return;
     }
@@ -555,10 +554,15 @@ function assignRolesAndClues(room) {
     p.clue = random([
       `You heard movement near ${room.incident.location}, but did not see who it was.`,
       `You noticed people acting nervous after the incident.`,
-      `You remember a noise, but the timing is unclear.`
+      `You remember a noise near ${room.incident.location}, but the timing is unclear.`,
+      `You noticed the room becoming quiet after ${room.incident.location} was mentioned.`
     ]);
     p.fakeRevealClue = null;
-    p.objective = "Stay calm, observe contradictions, and avoid becoming the easiest accusation.";
+    p.objective = random([
+      "Observe contradictions and avoid becoming the easiest accusation.",
+      "Watch who changes their story under pressure.",
+      "Stay believable and help the detective only when your information is useful."
+    ]);
   });
 
   const frameTarget = random(others) || culprit;
@@ -567,55 +571,79 @@ function assignRolesAndClues(room) {
   culprit.role = "Culprit";
   culprit.confidence = random(["Medium", "High"]);
   culprit.clue = random([
-    `Truth: you caused the incident at ${room.incident.location}. Do not reveal this. Push suspicion away from yourself.`,
-    `Truth: your timing does not match the official evidence. Stay calm and make another player look less reliable.`,
-    `Truth: you know exactly why the incident happened. Your job is to make the detective chase the wrong pattern.`
+    `SECRET: You arrived at ${room.incident.location} shortly before the incident. Someone may have noticed.`,
+    `SECRET: Your timeline overlaps with the incident at ${room.incident.location}. If people compare details carefully, they may catch it.`,
+    `SECRET: You left ${room.incident.location} without explaining why. That gap could become dangerous.`,
+    `SECRET: You know a detail about ${room.incident.location} that nobody else should know.`,
+    `SECRET: Evidence may eventually connect you to ${room.incident.location}, but it is not clear yet.`,
+    `SECRET: You were close enough to ${room.incident.location} that a careful witness could become a problem.`
   ]);
 
   culprit.fakeRevealClue = random([
-    `You heard someone moving near ${room.incident.location}, but you could not identify who it was.`,
+    `You heard movement near ${room.incident.location}, but you could not identify who it was.`,
     `You saw ${frameTarget.name} acting nervous after the incident, but you are not fully sure why.`,
-    `You noticed ${decoyTarget.name} was unusually quiet when the incident was mentioned.`,
+    `You noticed ${decoyTarget.name} was unusually quiet when ${room.incident.location} was mentioned.`,
     `You remember a sound from ${room.incident.location}, but the timing felt confusing.`,
-    `You saw people gathering near ${room.incident.location}, but nothing clearly proved who caused it.`
+    `You saw people gathering near ${room.incident.location}, but nothing clearly proved who caused it.`,
+    `You noticed someone leaving the area after the incident, but you only saw them briefly.`
   ]);
 
   culprit.objective = random([
-    `Avoid accusation. Secret goal: make ${frameTarget.name} look suspicious without seeming desperate. You also have one Anonymous Tip ability.`,
-    `Avoid accusation. Secret goal: make at least one witness look unreliable. You also have one Anonymous Tip ability.`,
-    `Avoid accusation. Secret goal: get two other players arguing with each other. You also have one Anonymous Tip ability.`,
-    `Avoid accusation. Secret goal: reveal your fake clue at the perfect moment to look helpful. You also have one Anonymous Tip ability.`
-  ]);
+    `Survive until reveal. Secret goal: make ${frameTarget.name} become the main suspect.`,
+    `Survive until reveal. Secret goal: make at least one witness doubt their own clue.`,
+    `Survive until reveal. Secret goal: get two other players arguing with each other.`,
+    `Survive until reveal. Secret goal: use your fake reveal clue at the right moment to look helpful.`,
+    `Survive until reveal. Secret goal: keep the detective uncertain until time runs out.`,
+    `Survive until reveal. Secret goal: redirect discussion away from your movements.`
+  ]) + " You also have one Anonymous Tip ability.";
 
   others.forEach((p, i) => {
     if (i % 3 === 0) {
       p.role = "Witness";
       p.confidence = random(["Medium", "High"]);
       p.clue = random([
-        `You saw ${culprit.name} near ${room.incident.location} before the incident, but did not see the actual act.`,
+        `You saw ${culprit.name} near ${room.incident.location} shortly before the incident.`,
+        `${culprit.name} was one of the last people you noticed near ${room.incident.location}.`,
         `You heard ${culprit.name}'s name mentioned around the incident time.`,
-        `You noticed ${culprit.name} leaving the area shortly after something felt wrong.`
+        `You noticed ${culprit.name} leaving the area shortly after something felt wrong.`,
+        `${culprit.name} appeared unusually tense when ${room.incident.location} was mentioned.`
       ]);
-      p.objective = "Help the streamer connect the dots. Do not sound too certain unless your clue supports it.";
+      p.objective = random([
+        "Help the detective connect the dots without overstating your clue.",
+        "Share what you know, but be careful: sounding too certain may backfire.",
+        "Protect your credibility and help expose contradictions."
+      ]);
     } else if (i % 3 === 1) {
       const wrong = random(room.players.filter((x) => x.id !== culprit.id && x.id !== p.id)) || culprit;
       p.role = "Misinformed";
       p.confidence = random(["Low", "Medium"]);
       p.clue = random([
-        `You think you saw ${wrong.name} near ${room.incident.location}, but the lighting was bad.`,
-        `You heard footsteps and assumed it was ${wrong.name}, but you are not fully sure.`,
-        `${wrong.name} seemed nervous, but that may not mean anything.`
+        `You believe you saw ${wrong.name} near ${room.incident.location}, but visibility was poor.`,
+        `${wrong.name} looked suspicious around ${room.incident.location}, though you are not completely certain.`,
+        `You remember ${wrong.name} being nearby, but your memory feels fuzzy.`,
+        `You think ${wrong.name} was involved somehow, though you have no proof.`,
+        `${wrong.name} seemed nervous after the incident, but that may not mean anything.`
       ]);
-      p.objective = "Your clue may be wrong. Defend it if questioned, but do not overplay it.";
+      p.objective = random([
+        "Defend your memory if challenged, but do not overplay weak information.",
+        "Your clue may be wrong. Try not to become a distraction.",
+        "Help if you can, but remember that confidence matters."
+      ]);
     } else {
       p.role = "Observer";
       p.confidence = random(["Low", "Medium"]);
       p.clue = random([
         `You saw nothing directly, but noticed the room went quiet after the incident.`,
         `You heard a sound from ${room.incident.location}, but missed who was nearby.`,
-        `You noticed someone changed the topic quickly after the incident.`
+        `You noticed someone changed the topic quickly after ${room.incident.location} was mentioned.`,
+        `You remember tension rising after the incident, but no single person stood out.`,
+        `You saw people watching each other carefully after the incident.`
       ]);
-      p.objective = "Watch who contradicts themselves. You can bluff, support, or challenge others.";
+      p.objective = random([
+        "Watch who contradicts themselves. You can support, challenge, or bluff.",
+        "Stay useful without pretending to know more than you do.",
+        "Read the room and avoid becoming easy suspicion."
+      ]);
     }
   });
 }
