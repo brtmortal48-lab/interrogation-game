@@ -10,103 +10,97 @@
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 <button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
 
-<h1>🎥 The Interrogation</h1>
-<p class="creatorSmall">Created by Zameerul Haq • Sri Lanka</p>
+<header class="streamerHero">
+  <div>
+    <h1>🎥 The Interrogation</h1>
+    <p class="creatorSmall">Created by Zameerul Haq • Sri Lanka</p>
+  </div>
 
-<div class="topbar">
-  <input id="streamerName" placeholder="Streamer name">
-  <input id="room" placeholder="Room ID">
-  <button onclick="join()">Join as Streamer</button>
-  <button id="startBtn" onclick="startRound()">Start Round</button>
-  <button class="danger" onclick="reveal()">Reveal</button>
-</div>
+  <div class="bigTimerBox">
+    <span>TIME REMAINING</span>
+    <b id="timer">--</b>
+  </div>
+</header>
 
-<div class="inviteBox">
-  <b>Player Invite:</b>
-  <input id="inviteLink" readonly>
-  <button onclick="copyInvite()">Copy Player Link</button>
+<section class="panel controlPanel">
+  <div class="controlGroup">
+    <input id="streamerName" placeholder="Streamer name">
+    <input id="room" placeholder="Room ID">
+    <button onclick="join()">Join as Streamer</button>
+  </div>
 
-  <b>OBS Overlay:</b>
-  <input id="overlayLink" readonly>
-  <button onclick="copyOverlay()">Copy Overlay Link</button>
-</div>
+  <div class="controlGroup">
+    <button id="startBtn" onclick="startRound()">Start Round</button>
+    <button class="danger" onclick="reveal()">Reveal Case</button>
+    <button onclick="openSettings()">⚙ Settings</button>
+  </div>
+</section>
 
-<div class="panel lockPanel">
+<section class="panel roomPanel">
+  <div>
+    <b>Room:</b> <span id="roomLabel">--</span>
+  </div>
+
+  <div>
+    <b>Detective:</b> <span id="detectiveLabel">--</span>
+  </div>
+
+  <div>
+    <b>Players:</b> <span id="playerCount">0 / 10</span>
+  </div>
+
+  <div>
+    <b>Round:</b> <span id="roundNumber">0</span>
+  </div>
+
+  <div>
+    <b>Accused:</b> <span id="accused">None</span>
+  </div>
+
+  <div>
+    <b>Spotlight:</b> <span id="spotlight">None</span>
+  </div>
+</section>
+
+<section class="panel linkPanel">
+  <div>
+    <b>Player Invite</b>
+    <input id="inviteLink" readonly>
+    <button onclick="copyInvite()">Copy</button>
+  </div>
+
+  <div>
+    <b>OBS Overlay</b>
+    <input id="overlayLink" readonly>
+    <button onclick="copyOverlay()">Copy</button>
+  </div>
+</section>
+
+<section class="panel lockPanel">
   <span>Room Lock: <b id="lockState">Locked</b></span>
   <button onclick="toggleRoomLock()">Toggle Lock</button>
   <small>Locked rooms only allow the private host link to join as streamer.</small>
-</div>
+</section>
 
-<div class="panel collapsibleSettings">
-  <details>
-    <summary>Room & Audio Settings</summary>
-
-    <div class="settingsGrid">
-      <label>Min Players <input id="minPlayers" type="number" min="2" max="30" value="2"></label>
-      <label>Max Players <input id="maxPlayers" type="number" min="2" max="50" value="10"></label>
-      <label>Round Time <input id="roundTime" type="number" min="0" max="3600" value="210"></label>
-      <label>Cooldown ms <input id="cooldown" type="number" min="1000" max="15000" value="4000"></label>
-
-      <label>Difficulty
-        <select id="difficulty">
-          <option value="easy">Easy</option>
-          <option value="normal" selected>Normal</option>
-          <option value="hard">Hard</option>
-        </select>
-      </label>
-
-      <label>Music Style
-        <select id="musicStyle" onchange="restartMusicIfOn()">
-          <option value="spaceSuspense" selected>Space Suspense</option>
-          <option value="cozyLobby">Cozy Lobby</option>
-          <option value="warmMystery">Warm Mystery</option>
-          <option value="softNight">Soft Night</option>
-          <option value="differentTempo">Different Tempo</option>
-        </select>
-      </label>
-
-      <button onclick="saveSettings()">Save Settings</button>
-      <button onclick="toggleSound()">SFX: <span id="soundState">On</span></button>
-      <button onclick="toggleMusic()">Music: <span id="musicState">Off</span></button>
-
-      <label>Music Volume
-        <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)">
-      </label>
-
-      <p class="hint">Set Round Time to 0 for unlimited Story Mode.</p>
-    </div>
-  </details>
-</div>
-
-<div class="status">
-  <span>Detective: <b id="detectiveLabel">--</b></span>
-  <span>Room: <b id="roomLabel">--</b></span>
-  <span>Players: <b id="playerCount">0 / 2</b></span>
-  <span>Round: <b id="roundNumber">0</b></span>
-  <span>Timer: <b id="timer">--</b></span>
-  <span>Accused: <b id="accused">None</b></span>
-  <span>Spotlight: <b id="spotlight">None</b></span>
-</div>
-
-<div id="lobbyPlayers" class="panel">
+<section id="lobbyPlayers" class="panel">
   <h2>Lobby Players</h2>
   <div id="lobbyList">No players yet.</div>
-</div>
+</section>
 
 <div id="incident" class="incident">Waiting for case...</div>
 
-<section class="panel">
+<section class="panel casePanel">
   <h2>📁 Case File</h2>
   <div id="caseFile" class="card">
     <p>Start a round to generate a case.</p>
   </div>
 </section>
 
-<div class="streamerMainLayout">
-  <div class="streamerLeft">
+<div class="streamerDashboard">
+  <main class="dashboardMain">
     <section class="panel">
       <h2>🧾 Investigation Board</h2>
-      <p class="hint">These facts and leads create questions. They should not solve the case by themselves.</p>
+      <p class="hint">Facts and leads create questions. They should not solve the case alone.</p>
       <div id="evidence"></div>
     </section>
 
@@ -115,11 +109,11 @@
       <p class="hint">Start by asking where each player was at the case time.</p>
       <div id="players"></div>
     </section>
-  </div>
+  </main>
 
-  <div class="streamerRight">
+  <aside class="dashboardSide">
     <section class="panel">
-      <h2>❓ Suggested Questions</h2>
+      <h2>❓ Question Prompts</h2>
       <div id="questions">
         <p class="hint">Questions appear when the round starts.</p>
       </div>
@@ -148,10 +142,65 @@
       <h2>💬 Live Statements</h2>
       <div id="chat" class="chat sideChat"></div>
     </section>
-  </div>
+  </aside>
 </div>
 
 <div id="result" class="result"></div>
+
+<div id="settingsModal" class="modalOverlay" style="display:none;">
+  <div class="modal settingsModal">
+    <button class="closeBtn" onclick="closeSettings()">×</button>
+    <h2>Game Settings</h2>
+
+    <div class="settingsGrid">
+      <label>Min Players
+        <input id="minPlayers" type="number" min="2" max="30" value="2">
+      </label>
+
+      <label>Max Players
+        <input id="maxPlayers" type="number" min="2" max="50" value="10">
+      </label>
+
+      <label>Round Time
+        <input id="roundTime" type="number" min="0" max="3600" value="210">
+      </label>
+
+      <label>Chat Cooldown ms
+        <input id="cooldown" type="number" min="1000" max="15000" value="4000">
+      </label>
+
+      <label>Difficulty
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+
+      <label>Music Style
+        <select id="musicStyle" onchange="restartMusicIfOn()">
+          <option value="spaceSuspense" selected>Space Suspense</option>
+          <option value="cozyLobby">Cozy Lobby</option>
+          <option value="warmMystery">Warm Mystery</option>
+          <option value="softNight">Soft Night</option>
+          <option value="differentTempo">Different Tempo</option>
+        </select>
+      </label>
+
+      <label>Music Volume
+        <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)">
+      </label>
+    </div>
+
+    <div class="modalActions">
+      <button onclick="saveSettings()">Save Settings</button>
+      <button onclick="toggleSound()">SFX: <span id="soundState">On</span></button>
+      <button onclick="toggleMusic()">Music: <span id="musicState">Off</span></button>
+    </div>
+
+    <p class="hint">Set Round Time to 0 for unlimited Story Mode.</p>
+  </div>
+</div>
 
 <div id="howToModal" class="modalOverlay" style="display:none;">
   <div class="modal">

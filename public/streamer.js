@@ -58,6 +58,14 @@ function join() {
   });
 }
 
+function openSettings() {
+  document.getElementById("settingsModal").style.display = "flex";
+}
+
+function closeSettings() {
+  document.getElementById("settingsModal").style.display = "none";
+}
+
 function toggleRoomLock() {
   roomLocked = !roomLocked;
   socket.emit("setRoomLock", { roomId, locked: roomLocked });
@@ -84,6 +92,8 @@ function saveSettings() {
       difficulty: document.getElementById("difficulty").value
     }
   });
+
+  closeSettings();
 }
 
 function toggleSound() {
@@ -377,7 +387,7 @@ socket.on("roundStarted", (data) => {
 
   document.getElementById("incident").innerText = data.incidentTitle;
   document.getElementById("roundNumber").innerText = data.roundNumber;
-  document.getElementById("timer").innerText = data.unlimitedTime ? "∞" : formatTime(data.timeLeft);
+  updateTimerDisplay(data.unlimitedTime ? 0 : data.timeLeft);
 
   renderCaseFile(data.caseFile);
   renderQuestions(data.suggestedQuestions || []);
@@ -404,7 +414,7 @@ socket.on("suspicionUpdate", (data) => {
 });
 
 socket.on("timerUpdate", (timeLeft) => {
-  document.getElementById("timer").innerText = timeLeft === 0 ? "∞" : formatTime(timeLeft);
+  updateTimerDisplay(timeLeft);
 });
 
 socket.on("newMessage", (data) => {
@@ -467,6 +477,22 @@ socket.on("reveal", (data) => {
 });
 
 socket.on("soundCue", playSound);
+
+function updateTimerDisplay(timeLeft) {
+  const timer = document.getElementById("timer");
+
+  timer.classList.remove("timerWarning", "timerDanger");
+
+  if (timeLeft === 0) {
+    timer.innerText = "∞";
+    return;
+  }
+
+  timer.innerText = formatTime(timeLeft);
+
+  if (timeLeft <= 30) timer.classList.add("timerDanger");
+  else if (timeLeft <= 60) timer.classList.add("timerWarning");
+}
 
 function renderCaseFile(caseFile) {
   const box = document.getElementById("caseFile");

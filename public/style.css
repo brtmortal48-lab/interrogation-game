@@ -1103,3 +1103,143 @@ a.linkBtn {
     text-align: left;
   }
 }
+
+.streamerHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.streamerHero h1 {
+  margin-bottom: 4px;
+}
+
+.bigTimerBox {
+  min-width: 220px;
+  text-align: center;
+  padding: 16px 22px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.15);
+}
+
+.bigTimerBox span {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.bigTimerBox b {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.timerWarning {
+  color: #fbbf24;
+}
+
+.timerDanger {
+  color: #ef4444;
+  animation: timerPulse 0.8s infinite alternate;
+}
+
+@keyframes timerPulse {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.75; transform: scale(1.06); }
+}
+
+.controlPanel {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.controlGroup {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.roomPanel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.roomPanel div {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.linkPanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.linkPanel div {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.streamerDashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(330px, 0.8fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.dashboardMain,
+.dashboardSide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.casePanel .card {
+  font-size: 15px;
+}
+
+.settingsModal {
+  max-width: 760px;
+}
+
+.modalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (max-width: 950px) {
+  .streamerHero,
+  .controlPanel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bigTimerBox {
+    min-width: unset;
+  }
+
+  .linkPanel,
+  .streamerDashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .linkPanel div {
+    grid-template-columns: 1fr;
+  }
+}
