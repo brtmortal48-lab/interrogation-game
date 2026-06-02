@@ -678,8 +678,8 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || process.env.HOSTINGER_PORT || 3000;
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Running on port ${PORT}`);
 });
