@@ -193,3 +193,16 @@ socket.on("kicked", (message) => {
   alert(message);
   location.href = "/";
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const msgInput = document.getElementById("msg");
+
+  if (msgInput) {
+    msgInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        send();
+      }
+    });
+  }
+});
