@@ -1500,79 +1500,127 @@ function assignAlibisRolesAndClues(room) {
 }
 
 function assignDepthIntel(room, murderer, frameTarget, locations) {
-  const evidenceTypes = [
-    "Photo Fragment",
-    "Audio Fragment",
-    "Access Log",
-    "Witness Statement",
-    "Route Note",
-    "Broken Camera Note",
-    "Object Trace"
-  ];
+  const publicFragmentRules = {
+    Witness: [
+      "Photo Fragment: a blurred figure appears near the incident route, but the face is not visible.",
+      "Witness Statement: you saw someone leave quickly, but only remember their posture, not their identity.",
+      "Route Note: someone crossed near the case location shortly before the incident, but the direction is unclear.",
+      "Audio Fragment: you heard hurried footsteps and a short metallic sound near the incident time."
+    ],
+    Guard: [
+      "Guard Log: one checkpoint was skipped, but the log does not name who skipped it.",
+      "Patrol Note: a corridor door was opened near the incident window, but the camera angle failed.",
+      "Security Fragment: someone had access nearby, but access does not prove guilt.",
+      "Badge Trace: a reader pinged once, but the record is partial."
+    ],
+    Journalist: [
+      "Interview Fragment: someone sounded defensive when asked about access permissions.",
+      "Rumor Note: two people disagreed earlier, but the argument may be unrelated.",
+      "Report Draft: one alibi sounds rehearsed, but there is no proof it is fake.",
+      "Voice Note: someone mentioned the missing object before the incident became public."
+    ],
+    Informant: [
+      "Access Log: a partial entry confirms movement, but the name field is corrupted.",
+      "Anonymous Source: someone was hiding a harmless mistake that now looks suspicious.",
+      "Message Fragment: one deleted line mentions timing, but not the culprit.",
+      "Tip Fragment: the strongest clue points to a route, not a person."
+    ],
+    Analyst: [
+      "Timeline Fragment: two stories overlap in a way that needs questioning.",
+      "System Fragment: the incident window is narrower than people think, but still not solved.",
+      "Pattern Note: one player gave details too late, after hearing other alibis.",
+      "Data Fragment: a route conflict exists, but it could be panic, mistake, or guilt."
+    ],
+    Lawyer: [
+      "Defense Note: one suspicious player may be innocent because their motive has another explanation.",
+      "Statement Fragment: a nervous answer does not automatically mean guilt.",
+      "Alibi Note: someone has a weak confirmation, not a broken alibi.",
+      "Context Fragment: one accusation may be moving too fast."
+    ],
+    Drifter: [
+      "Route Fragment: your path crossed several rooms, which makes your own story messy.",
+      "Movement Note: you saw motion near a side route, but cannot place it exactly.",
+      "Memory Fragment: you remember noise, not identity.",
+      "Timing Fragment: your movement could confuse the case if explained badly."
+    ],
+    Observer: [
+      "Observation Fragment: someone acted nervous, but that could be fear, not guilt.",
+      "Room Tone: the group became quiet when the case location was mentioned.",
+      "Behavior Note: one player changed wording after hearing another alibi.",
+      "Soft Clue: you noticed pressure building around the wrong detail."
+    ]
+  };
 
-  const relationshipTemplates = [
-    (p, t) => `You trust ${t.name}, but their timing feels incomplete.`,
-    (p, t) => `You argued with ${t.name} earlier about the incident area.`,
-    (p, t) => `You were supposed to meet ${t.name}, but they were not where you expected.`,
-    (p, t) => `You saw ${t.name} near your route, but you are unsure if it matters.`,
-    (p, t) => `${t.name} can partly confirm your movement, but only if they choose to speak up.`,
-    (p, t) => `You think ${t.name} is hiding a harmless mistake that could look suspicious.`
+  const relationshipReasons = [
+    (p, t) => `You trust ${t.name} because they helped you cover a minor mistake earlier. That trust may make you biased.`,
+    (p, t) => `You argued with ${t.name} about access permissions before the incident. It may sound worse than it was.`,
+    (p, t) => `You expected to meet ${t.name}, but they arrived late. Ask them why before accusing them.`,
+    (p, t) => `${t.name} can partly confirm your route, but only for one part of the timeline.`,
+    (p, t) => `You saw ${t.name} near a side route, but that does not prove they entered ${room.incident.location}.`,
+    (p, t) => `You think ${t.name} is hiding an embarrassing mistake, not necessarily the crime.`,
+    (p, t) => `${t.name} warned you not to mention something small. That now feels suspicious.`,
+    (p, t) => `You and ${t.name} both noticed the same sound, but disagree on where it came from.`
   ];
 
   const motiveTemplates = [
-    `You made a small mistake earlier and do not want it blamed on you.`,
-    `You had a reason to be near ${room.incident.location}, but explaining it may sound suspicious.`,
-    `You were covering for someone else, even though you are not sure they are innocent.`,
+    `You broke a small rule earlier and do not want the detective to focus on it.`,
+    `You had a harmless reason to be near ${room.incident.location}, but explaining it may sound suspicious.`,
+    `You were protecting someone else's privacy, even though it could make you look guilty.`,
     `You needed information connected to ${room.incident.object}, but not for the crime.`,
-    `You panicked after the incident and your story may sound less clean than it is.`,
-    `You know one detail that could help, but saying it too early may put suspicion on you.`
+    `You panicked after the incident and your timeline may sound less clean than it is.`,
+    `You know a useful detail, but revealing it too early could put suspicion on you.`,
+    `You lied about one small thing before the case started. The lie is not the crime, but it can hurt you.`,
+    `You were trying to avoid blame for a separate mistake. That motive can be misunderstood.`
   ];
 
   room.players.forEach((p) => {
     const candidates = room.players.filter((x) => x.id !== p.id);
     const target = random(candidates) || p;
-    const evidenceType = random(evidenceTypes);
-    const nearby = random(locations.filter((l) => l !== room.incident.location)) || "the hallway";
+    const nearby = random(locations.filter((l) => l !== room.incident.location)) || "a side corridor";
 
     p.relationshipTargetId = target.id;
     p.relationshipTargetName = target.name;
-    p.relationship = random(relationshipTemplates)(p, target);
+    p.relationship = random(relationshipReasons)(p, target);
     p.motive = random(motiveTemplates);
 
     if (p.role === "Murderer") {
-      p.relationship = `You need ${frameTarget?.name || target.name} to look more suspicious than you.`;
-      p.motive = `Your real motive is tied to ${room.incident.object}. Keep the room focused on alibi confusion.`;
-      p.evidenceFragment = `False ${evidenceType}: You can claim you noticed activity near ${nearby}, but keep it vague.`;
-      p.interrogationAngle = `If questioned, redirect toward ${frameTarget?.name || target.name}'s timing gap.`;
+      const frameName = frameTarget?.name || target.name;
+      p.relationship = `You need ${frameName} to look more suspicious than you without making it obvious.`;
+      p.motive = `Your real motive is tied to ${room.incident.object}. Keep the room focused on imperfect alibis instead of motive.`;
+      p.evidenceFragment = random([
+        `False Fragment: you can claim you noticed movement near ${nearby}, but keep the description vague.`,
+        `Fake Route Note: you can imply someone crossed near ${nearby}, but do not give too many details.`,
+        `Corrupted Memory: you can pretend your timing is fuzzy to avoid being pinned down.`,
+        `False Behavior Note: you can say ${frameName} seemed nervous after the incident.`
+      ]);
+      p.interrogationAngle = `If questioned, redirect toward ${frameName}'s timing gap and avoid giving exact minutes.`;
       return;
     }
 
     if (p.role === "Accomplice") {
-      p.relationship = `You know ${murderer.name} is connected to the incident. Do not make the protection obvious.`;
-      p.motive = `You are protecting someone because exposing them may expose you too.`;
-      p.evidenceFragment = `Cover Fragment: One detail can make ${murderer.name}'s route sound less suspicious.`;
-      p.interrogationAngle = `Defend without over-defending. Too much support will look coordinated.`;
+      p.relationship = `You know ${murderer.name} is connected to the incident. Protect them without sounding coordinated.`;
+      p.motive = `You are protecting someone because exposing them may expose your own bad decision too.`;
+      p.evidenceFragment = random([
+        `Cover Fragment: one detail can make ${murderer.name}'s route sound less suspicious, but overusing it will expose you.`,
+        `Support Note: you can soften one accusation, but do not defend too aggressively.`,
+        `Timing Fragment: you know a tiny detail that can blur the incident window.`
+      ]);
+      p.interrogationAngle = `Defend without over-defending. If pressured, talk about uncertainty, not certainty.`;
       return;
     }
 
-    p.evidenceFragment = random([
-      `${evidenceType}: You noticed a clue connected to ${room.incident.location}, but it does not identify anyone directly.`,
-      `${evidenceType}: Something around ${room.incident.time} does not match a clean timeline.`,
-      `${evidenceType}: You can confirm movement near ${nearby}, but not who caused the incident.`,
-      `${evidenceType}: This supports one theory, but could also be misunderstood.`,
-      `${evidenceType}: It may explain why someone innocent looked nervous.`
-    ]);
-
+    const list = publicFragmentRules[p.role] || publicFragmentRules.Observer;
+    p.evidenceFragment = random(list);
     p.interrogationAngle = random([
       `Ask who can confirm your route before revealing too much.`,
       `Use your relationship detail to challenge another player's timeline.`,
       `Do not oversell your evidence. It is a fragment, not proof.`,
-      `Your motive can make you look suspicious, so explain it carefully.`,
-      `Push others to explain what they were doing, not just where they were.`
+      `Your motive can make you look suspicious, so explain it before someone twists it.`,
+      `Push others to explain what they were doing, not just where they were.`,
+      `Reveal your fragment only when it helps compare two alibis.`
     ]);
   });
 }
-
 function generateInvestigationBoard(room) {
   return [
     {
@@ -1583,22 +1631,27 @@ function generateInvestigationBoard(room) {
     {
       type: "Timeline Fact",
       reliability: "Stable",
-      text: `The incident happened around ${room.incident.time}, but movement records are incomplete.`
+      text: `The incident happened around ${room.incident.time}. The exact movement order is still uncertain.`
+    },
+    {
+      type: "Fragment Rule",
+      reliability: "Stable",
+      text: `No single clue identifies the culprit. Evidence fragments must be compared with alibis, motives, and relationships.`
     },
     {
       type: "Open Lead",
       reliability: "Questionable",
-      text: `Someone was near ${room.incident.location} close to the incident time. Identity unclear.`
+      text: `Someone moved near the incident route, but identity and intent are unclear.`
     },
     {
-      type: "Alibi Lead",
+      type: "Relationship Lead",
       reliability: "Questionable",
-      text: `At least one public alibi may have a timing gap. Compare stories carefully.`
+      text: `At least two players have a personal connection that could create bias, protection, or false suspicion.`
     },
     {
       type: "Motive Theme",
       reliability: "Questionable",
-      text: `Possible motive theme: ${room.caseFile?.motiveTheme || "unknown pressure"}. This may explain why an innocent person still looks suspicious.`
+      text: `Possible motive theme: ${room.caseFile?.motiveTheme || "unknown pressure"}. Innocent players may still look guilty.`
     },
     {
       type: "Suspicious Object",
@@ -1606,62 +1659,71 @@ function generateInvestigationBoard(room) {
       text: `Investigators found mention of ${room.caseFile?.suspiciousObject || "a suspicious object"}. It may be evidence, bait, or a coincidence.`
     },
     {
-      type: "System Note",
+      type: "Corrupted Record",
       reliability: "Corrupted",
-      text: `Recovered logs are partial. They can support theories, but cannot solve the case alone.`
+      text: `System records are incomplete. Treat logs as support, not proof.`
     }
   ];
 }
-
 function generateMidEvidence(room) {
   return random([
     {
-      type: "Recovered Movement",
+      type: "Recovered Movement Fragment",
       reliability: "Questionable",
-      text: `Recovered footage shows movement near ${room.incident.location}. Identity unclear.`
+      text: `Recovered footage shows movement near a route connected to ${room.incident.location}. Identity unclear.`
     },
     {
       type: "Audio Fragment",
       reliability: "Questionable",
-      text: `A short audio fragment captured hurried movement, but no clear voice.`
+      text: `A short audio fragment captured hurried movement and a metallic sound, but no clear voice.`
     },
     {
-      type: "Corrected Log",
-      reliability: "Stable",
-      text: `The timeline confirms the incident window, but not who caused it. Alibis still matter most.`
+      type: "Partial Access Log",
+      reliability: "Corrupted",
+      text: `One access entry is damaged. It confirms activity, not the person responsible.`
     },
     {
-      type: "New Lead",
+      type: "Witness Correction",
       reliability: "Questionable",
-      text: `One story may not match the incident timing. Re-question players about where they were.`
+      text: `A witness corrected their memory: the direction of movement may have been wrong.`
+    },
+    {
+      type: "Motive Lead",
+      reliability: "Questionable",
+      text: `Someone had a reason to hide a separate mistake. That does not automatically make them guilty.`
+    },
+    {
+      type: "Relationship Lead",
+      reliability: "Questionable",
+      text: `One player may be protecting another player, but the reason is unclear.`
     }
   ]);
 }
-
 function generateSuggestedQuestions(room) {
   const base = [
     `Where were you at ${room.incident.time}?`,
-    `Who can confirm your alibi?`,
-    `Why were you near that area?`,
-    `Did you hear or see anything near ${room.incident.location}?`,
-    `Whose story changed after pressure?`,
-    `Who sounds too certain for a weak observation?`,
-    `Which alibi has the biggest time gap?`
+    `What exactly were you doing there?`,
+    `Who can confirm only part of your alibi?`,
+    `What motive might make you look suspicious even if you are innocent?`,
+    `Who are you protecting, trusting, or avoiding?`,
+    `What evidence fragment do you have: photo, audio, log, route, or witness statement?`,
+    `Which clue creates a question instead of an answer?`,
+    `Who sounds too certain for a weak fragment?`
   ];
 
   const contextual = room.players
     .filter((p) => p.relationship || p.motive || p.evidenceFragment)
-    .slice(0, 6)
+    .slice(0, 8)
     .map((p) => random([
-      `${p.name} has a personal angle. Ask what they were trying to hide.`,
-      `${p.name} has a connection to another player. Ask who they trust and why.`,
-      `${p.name} has a fragment of evidence. Ask what type of information they are holding.`,
-      `Ask ${p.name} whether their motive makes them look guilty or just nervous.`
+      `${p.name} has a personal angle. Ask what they are afraid will be misunderstood.`,
+      `${p.name} has a connection to ${p.relationshipTargetName || "another player"}. Ask why that connection matters.`,
+      `${p.name} has an evidence fragment. Ask what it proves and what it does NOT prove.`,
+      `Ask ${p.name} whether their motive is guilt, panic, or protection.`,
+      `Ask ${p.name} who benefits if their fragment is interpreted the wrong way.`
     ]));
 
   return [...base, ...contextual];
 }
-
 function generateAnonymousTip(room, player) {
   const targets = room.players.filter((p) => p.id !== player.id);
   const target = random(targets) || player;
