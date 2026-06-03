@@ -2,12 +2,14 @@ const socket = io();
 
 let roomId = "";
 let players = [];
-let selectedPlayerId = localStorage.getItem("viewerVoteSelected") || "";
-let voterId = localStorage.getItem("interrogationViewerId");
+let selectedPlayerId = sessionStorage.getItem("viewerVoteSelected") || "";
+let voterId = sessionStorage.getItem("interrogationViewerSessionId");
 
+// Use sessionStorage instead of localStorage so two tabs can count as two viewers.
+// Real viewers on separate devices/browsers also count separately.
 if (!voterId) {
-  voterId = `viewer_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  localStorage.setItem("interrogationViewerId", voterId);
+  voterId = `viewer_${Date.now()}_${Math.random().toString(36).slice(2)}_${cryptoRandomPart()}`;
+  sessionStorage.setItem("interrogationViewerSessionId", voterId);
 }
 
 window.onload = () => {
@@ -30,7 +32,7 @@ function joinVoteRoom() {
 
 function castVote(playerId) {
   selectedPlayerId = playerId;
-  localStorage.setItem("viewerVoteSelected", selectedPlayerId);
+  sessionStorage.setItem("viewerVoteSelected", selectedPlayerId);
 
   socket.emit("voteCast", {
     roomId,
@@ -50,7 +52,7 @@ socket.on("roomUpdate", (data) => {
 socket.on("roundStarted", (data) => {
   players = data.players || [];
   selectedPlayerId = "";
-  localStorage.removeItem("viewerVoteSelected");
+  sessionStorage.removeItem("viewerVoteSelected");
   renderPlayers();
   renderVoteResults(data.viewerVotes || []);
 });
@@ -63,7 +65,7 @@ socket.on("voteUpdate", (data) => {
 
 socket.on("reveal", () => {
   selectedPlayerId = "";
-  localStorage.removeItem("viewerVoteSelected");
+  sessionStorage.removeItem("viewerVoteSelected");
 });
 
 function renderPlayers() {
@@ -97,6 +99,16 @@ function renderVoteResults(votes) {
       <div class="voteMeter"><div style="width:${v.percent}%"></div></div>
     </div>
   `).join("");
+}
+
+function cryptoRandomPart() {
+  try {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0].toString(36);
+  } catch {
+    return Math.random().toString(36).slice(2);
+  }
 }
 
 function escapeHtml(text) {
