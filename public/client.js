@@ -4,6 +4,7 @@ let roomId = "";
 let name = "";
 let players = [];
 let currentRole = "";
+let currentProfileCode = localStorage.getItem("interrogationProfileCode") || "";
 
 window.onload = () => {
   const params = new URLSearchParams(window.location.search);
@@ -15,6 +16,11 @@ window.onload = () => {
     document.getElementById("roomLabel").innerText = roomId;
     document.getElementById("joinHint").innerText = `Joining room ${roomId}. Enter your name.`;
   }
+
+  if (currentProfileCode) {
+    document.getElementById("profileCode").value = currentProfileCode;
+    socket.emit("loadProfile", { profileCode: currentProfileCode });
+  }
 };
 
 function join() {
@@ -25,9 +31,47 @@ function join() {
 
   document.getElementById("roomLabel").innerText = roomId;
 
-  socket.emit("joinRoom", { roomId, role: "player", name });
+  const profileCode = document.getElementById("profileCode").value.trim() || currentProfileCode;
+  socket.emit("joinRoom", { roomId, role: "player", name, profileCode });
 
   document.getElementById("game").style.display = "block";
+}
+
+
+function createProfile() {
+  const profileName = document.getElementById("name").value.trim();
+  if (!profileName) return alert("Enter your display name first.");
+  socket.emit("createProfile", { name: profileName });
+}
+
+function loadProfile() {
+  const profileCode = document.getElementById("profileCode").value.trim();
+  if (!profileCode) return alert("Enter your Profile ID.");
+  socket.emit("loadProfile", { profileCode });
+}
+
+function copyProfileCode() {
+  const code = currentProfileCode || document.getElementById("profileCode").value.trim();
+  if (!code) return alert("No Profile ID yet. Create a profile first.");
+  navigator.clipboard.writeText(code);
+  addSystemMessage(`Profile ID copied: ${code}`);
+}
+
+function setProfileUI(profileCode, profile) {
+  if (profileCode) {
+    currentProfileCode = profileCode;
+    localStorage.setItem("interrogationProfileCode", profileCode);
+    document.getElementById("profileCode").value = profileCode;
+    document.getElementById("profileCodeLabel").innerText = profileCode;
+    document.getElementById("profileStatusBadge").innerText = "Profile linked";
+    document.getElementById("profileStatusBadge").classList.add("profileLinked");
+  }
+
+  if (profile?.name && !document.getElementById("name").value.trim()) {
+    document.getElementById("name").value = profile.name;
+  }
+
+  renderProfileStats(profile);
 }
 
 function send() {
@@ -146,7 +190,7 @@ socket.on("privateData", (data) => {
   document.getElementById("abilityDescription").innerText =
     data.abilityDescription || "Your role ability will appear when the round starts.";
 
-  renderProfileStats(data.profileStats);
+  setProfileUI(data.profileCode, data.profileStats);
 
   const hiddenTruthBox = document.getElementById("hiddenTruthBox");
   const hiddenTruth = document.getElementById("hiddenTruth");
@@ -160,6 +204,26 @@ socket.on("privateData", (data) => {
   }
 
   renderCaseFile(data.caseFile);
+});
+
+
+socket.on("profileCreated", (data) => {
+  setProfileUI(data.profileCode, data.profile);
+  document.getElementById("joinHint").innerText = `Profile created. Save this ID: ${data.profileCode}`;
+  alert(`Profile created! Save this ID so you never lose points: ${data.profileCode}`);
+});
+
+socket.on("profileLoaded", (data) => {
+  setProfileUI(data.profileCode, data.profile);
+  document.getElementById("joinHint").innerText = `Loaded profile ${data.profileCode}.`;
+});
+
+socket.on("profileLinked", (data) => {
+  setProfileUI(data.profileCode, data.profile);
+});
+
+socket.on("profileError", (message) => {
+  alert(message);
 });
 
 socket.on("anonymousUsed", () => {
@@ -307,6 +371,8 @@ function renderProfileStats(stats) {
   const games = document.getElementById("profileGames");
   const winRate = document.getElementById("profileWinRate");
 
+  const code = document.getElementById("profileCodeLabel");
+  if (code && (stats.profileCode || stats.id)) code.innerText = stats.profileCode || stats.id;
   if (title) title.innerText = stats.title || "Rookie";
   if (points) points.innerText = stats.points || 0;
   if (games) games.innerText = stats.games || 0;

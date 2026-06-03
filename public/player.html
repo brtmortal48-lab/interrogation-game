@@ -19,11 +19,28 @@
   <div class="uxPlayerTimer"><span>TIME</span><b id="timer">--</b></div>
 </header>
 
-<section class="panel uxJoinCard">
-  <input id="name" placeholder="Your name">
-  <input id="room" placeholder="Room ID">
-  <button onclick="join()">Join Game</button>
-  <small id="joinHint">Enter your name and join the room.</small>
+<section class="panel uxJoinCard uxProfileJoinCard">
+  <div class="profileJoinHeader">
+    <div>
+      <h2>Join the Case</h2>
+      <p>Use a Profile ID to keep your points on any device.</p>
+    </div>
+    <span id="profileStatusBadge" class="profileStatusBadge">No profile</span>
+  </div>
+
+  <div class="profileJoinGrid">
+    <input id="name" placeholder="Your display name">
+    <input id="room" placeholder="Room ID">
+    <input id="profileCode" placeholder="Profile ID, e.g. AB12-CD34">
+  </div>
+
+  <div class="profileJoinActions">
+    <button onclick="join()">Join Game</button>
+    <button type="button" onclick="createProfile()">Create Profile</button>
+    <button type="button" onclick="loadProfile()">Load Profile</button>
+  </div>
+
+  <small id="joinHint">Create or load a profile to keep points, or join as a guest.</small>
 </section>
 
 <div id="game" style="display:none;">
@@ -62,6 +79,11 @@
 
       <section class="panel uxProfileCard">
         <h2>🏅 My Profile</h2>
+        <div class="profileCodeBox">
+          <span>Profile ID</span>
+          <b id="profileCodeLabel">Guest</b>
+          <button type="button" onclick="copyProfileCode()">Copy ID</button>
+        </div>
         <div class="profileMiniGrid">
           <div><span>Title</span><b id="profileTitle">Rookie</b></div>
           <div><span>Points</span><b id="profilePoints">0</b></div>

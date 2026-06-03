@@ -2,6 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -11,7 +13,8 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const rooms = {};
-const playerProfiles = {};
+const PROFILE_FILE = path.join(__dirname, "profiles.json");
+const playerProfiles = loadProfiles();
 
 const DEFAULT_SETTINGS = {
   minPlayers: 2,
@@ -32,7 +35,48 @@ io.on("connection", (socket) => {
     socket.emit("roomCreated", { roomId, hostKey });
   });
 
-  socket.on("joinRoom", ({ roomId, role, name, hostKey }) => {
+  socket.on("createProfile", ({ name }) => {
+    const cleanName = sanitizeName(name || "Player");
+    const profile = createPersistentProfile(cleanName);
+    socket.emit("profileCreated", {
+      profileCode: profile.id,
+      profile: getProfileStats(profile.id)
+    });
+  });
+
+  socket.on("loadProfile", ({ profileCode }) => {
+    const code = normalizeProfileCode(profileCode);
+    const profile = code ? playerProfiles[code] : null;
+
+    if (!profile) {
+      socket.emit("profileError", "Profile not found. Check the Profile ID or create a new profile.");
+      return;
+    }
+
+    socket.emit("profileLoaded", {
+      profileCode: profile.id,
+      profile: getProfileStats(profile.id)
+    });
+  });
+
+  socket.on("renameProfile", ({ profileCode, name }) => {
+    const code = normalizeProfileCode(profileCode);
+    const profile = code ? playerProfiles[code] : null;
+
+    if (!profile) {
+      socket.emit("profileError", "Profile not found.");
+      return;
+    }
+
+    profile.name = sanitizeName(name || profile.name);
+    saveProfiles();
+    socket.emit("profileLoaded", {
+      profileCode: profile.id,
+      profile: getProfileStats(profile.id)
+    });
+  });
+
+  socket.on("joinRoom", ({ roomId, role, name, hostKey, profileCode }) => {
     if (!roomId) return;
 
     roomId = String(roomId).trim().toUpperCase();
@@ -67,14 +111,22 @@ io.on("connection", (socket) => {
 
     if (role !== "player") return;
 
-    const cleanName = sanitizeName(name);
+    const requestedProfileCode = normalizeProfileCode(profileCode);
+    const linkedProfile = requestedProfileCode ? playerProfiles[requestedProfileCode] : null;
+    const cleanName = sanitizeName(name || linkedProfile?.name || "Player");
+    const playerProfile = linkedProfile || createPersistentProfile(cleanName);
+
+    if (linkedProfile && cleanName && cleanName !== linkedProfile.name) {
+      linkedProfile.name = cleanName;
+      saveProfiles();
+    }
 
     const duplicate = room.players.find(
-      (p) => p.name.toLowerCase() === cleanName.toLowerCase() && p.id !== socket.id
+      (p) => (p.profileId === playerProfile.id || p.name.toLowerCase() === cleanName.toLowerCase()) && p.id !== socket.id
     );
 
     if (duplicate) {
-      socket.emit("joinError", "That name is already taken in this room.");
+      socket.emit("joinError", "That profile or name is already in this room.");
       return;
     }
 
@@ -109,7 +161,12 @@ io.on("connection", (socket) => {
         bonusTargetName: null,
         score: 0,
         pressure: null,
-        profileKey: profileKey(cleanName)
+        profileId: playerProfile.id
+      });
+
+      socket.emit("profileLinked", {
+        profileCode: playerProfile.id,
+        profile: getProfileStats(playerProfile.id)
       });
     }
 
@@ -343,7 +400,9 @@ io.on("connection", (socket) => {
         abilityName: p.abilityName,
         abilityDescription: p.abilityDescription,
         canUseAnonymous: true,
-        caseFile: room.caseFile
+        caseFile: room.caseFile,
+        profileCode: p.profileId,
+        profileStats: getProfileStats(p.profileId || p.name)
       });
 
       io.to(p.id).emit("roundState", {
@@ -564,7 +623,7 @@ io.on("connection", (socket) => {
         confidence: p.observationQuality,
         bonusObjective: p.bonusObjective,
         bonusCompleted: p.bonusCompleted,
-        profileStats: getProfileStats(p.name),
+        profileStats: getProfileStats(p.profileId || p.name),
         suspicion: p.suspicion,
         score: p.score,
         gained: p.lastGained || 0
@@ -1580,15 +1639,67 @@ function generateResolutionSteps(room, murderer, accused, success) {
 }
 
 
-function profileKey(name) {
-  return sanitizeName(name).toLowerCase().replace(/[^a-z0-9]+/g, "_") || "anonymous";
+
+function loadProfiles() {
+  try {
+    if (!fs.existsSync(PROFILE_FILE)) return {};
+    const data = JSON.parse(fs.readFileSync(PROFILE_FILE, "utf8"));
+    return data && typeof data === "object" ? data : {};
+  } catch (err) {
+    console.warn("Could not load profiles.json:", err.message);
+    return {};
+  }
 }
 
-function ensureProfile(name) {
-  const key = profileKey(name);
+function saveProfiles() {
+  try {
+    fs.writeFileSync(PROFILE_FILE, JSON.stringify(playerProfiles, null, 2));
+  } catch (err) {
+    console.warn("Could not save profiles.json:", err.message);
+  }
+}
+
+function normalizeProfileCode(code) {
+  if (!code || typeof code !== "string") return "";
+  return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^(.{4})(.{4})$/, "$1-$2");
+}
+
+function generateProfileCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let raw = "";
+  do {
+    raw = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  } while (playerProfiles[`${raw.slice(0, 4)}-${raw.slice(4)}`]);
+  return `${raw.slice(0, 4)}-${raw.slice(4)}`;
+}
+
+function createPersistentProfile(name) {
+  const cleanName = sanitizeName(name || "Player");
+  const id = generateProfileCode();
+  playerProfiles[id] = {
+    id,
+    name: cleanName,
+    createdAt: new Date().toISOString(),
+    games: 0,
+    wins: 0,
+    points: 0,
+    murdererEscapes: 0,
+    casesSolved: 0,
+    bonusCompleted: 0,
+    bestRole: "Rookie"
+  };
+  saveProfiles();
+  return playerProfiles[id];
+}
+
+function fallbackProfile(name) {
+  const cleanName = sanitizeName(name || "Player");
+  const key = `LOCAL-${cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 16) || "anonymous"}`;
   if (!playerProfiles[key]) {
     playerProfiles[key] = {
-      name: sanitizeName(name),
+      id: key,
+      name: cleanName,
+      createdAt: new Date().toISOString(),
       games: 0,
       wins: 0,
       points: 0,
@@ -1597,28 +1708,40 @@ function ensureProfile(name) {
       bonusCompleted: 0,
       bestRole: "Rookie"
     };
+    saveProfiles();
   }
   return playerProfiles[key];
 }
 
-function getProfileStats(name) {
-  const profile = ensureProfile(name);
+function ensureProfile(profileIdOrName) {
+  const code = normalizeProfileCode(profileIdOrName);
+  if (code && playerProfiles[code]) return playerProfiles[code];
+  if (profileIdOrName && playerProfiles[profileIdOrName]) return playerProfiles[profileIdOrName];
+  return fallbackProfile(profileIdOrName);
+}
+
+function getProfileStats(profileIdOrName) {
+  const profile = ensureProfile(profileIdOrName);
   const winRate = profile.games ? Math.round((profile.wins / profile.games) * 100) : 0;
-  const title = profile.points >= 1000 ? "Case Legend" : profile.points >= 500 ? "Senior Detective" : profile.points >= 250 ? "Sharp Witness" : profile.points >= 100 ? "Trusted Player" : "Rookie";
+  const title = profile.points >= 2500 ? "Legend Detective"
+    : profile.points >= 1500 ? "Master Investigator"
+    : profile.points >= 800 ? "Senior Detective"
+    : profile.points >= 400 ? "Sharp Witness"
+    : profile.points >= 150 ? "Trusted Player"
+    : "Rookie";
   profile.bestRole = title;
-  return { ...profile, winRate, title };
+  return { ...profile, winRate, title, profileCode: profile.id };
 }
 
 function updatePlayerProfiles(room, detectiveSuccess) {
-  const murderer = room.players.find((p) => p.id === room.incident?.culpritId);
-
   room.players.forEach((p) => {
-    const profile = ensureProfile(p.name);
+    const profile = ensureProfile(p.profileId || p.name);
     const isMurdererSide = p.role === "Murderer" || p.role === "Accomplice";
     const won = isMurdererSide ? !detectiveSuccess : detectiveSuccess;
     const bonus = Boolean(p.bonusCompleted);
     const points = (p.lastGained || 0) + (bonus ? 35 : 0) + (won ? 15 : 0);
 
+    profile.name = sanitizeName(p.name || profile.name);
     profile.games += 1;
     profile.points += points;
     if (won) profile.wins += 1;
@@ -1626,14 +1749,17 @@ function updatePlayerProfiles(room, detectiveSuccess) {
     if (p.role === "Murderer" && !detectiveSuccess) profile.murdererEscapes += 1;
     if (!isMurdererSide && detectiveSuccess) profile.casesSolved += 1;
 
-    p.profileStats = getProfileStats(p.name);
+    p.profileId = profile.id;
+    p.profileStats = getProfileStats(profile.id);
     p.profilePointsGained = points;
   });
+  saveProfiles();
 }
 
 function profileLeaderboard() {
   return Object.values(playerProfiles)
-    .map((p) => ({ ...getProfileStats(p.name) }))
+    .filter((p) => p && !String(p.id || "").startsWith("LOCAL-") || (p.games || 0) > 0)
+    .map((p) => ({ ...getProfileStats(p.id) }))
     .sort((a, b) => b.points - a.points)
     .slice(0, 10);
 }
@@ -1644,7 +1770,7 @@ function publicPlayers(players) {
     name: p.name,
     suspicion: p.suspicion || 0,
     score: p.score || 0,
-    profileStats: getProfileStats(p.name),
+    profileStats: getProfileStats(p.profileId || p.name),
     publicAlibi: p.publicAlibi || "No alibi yet."
   }));
 }

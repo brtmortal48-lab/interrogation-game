@@ -4476,3 +4476,400 @@ button.danger {
     width: 100%;
   }
 }
+
+/* PHASE 13A — Landing page, player profiles, onboarding polish */
+
+.landingBody {
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(88, 166, 255, 0.16), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.12), transparent 30%),
+    #07111f;
+  color: #e5edf8;
+}
+
+.landingNav {
+  max-width: 1180px;
+  margin: 0 auto 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.landingLogo {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-size: 20px;
+}
+
+.landingNav nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.landingNav a,
+.landingSecondary {
+  color: #9fb3ca;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.landingHero {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.85fr);
+  gap: 32px;
+  align-items: center;
+}
+
+.landingHero h1 {
+  font-size: clamp(42px, 7vw, 78px);
+  line-height: 0.95;
+  margin: 8px 0 18px;
+  letter-spacing: -0.07em;
+}
+
+.landingSub {
+  color: #aab8ca;
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 650px;
+}
+
+.landingActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.landingPrimary {
+  padding: 15px 22px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.landingStatus {
+  margin-top: 14px;
+  color: #93c5fd;
+  font-weight: 800;
+}
+
+.landingPreview {
+  border-radius: 28px;
+  padding: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.9));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.previewTop,
+.previewGrid {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.previewTop span,
+.previewGrid span {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.previewTop b {
+  font-size: 46px;
+  color: #f8fafc;
+}
+
+.previewCase {
+  margin: 24px 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  font-weight: 900;
+}
+
+.previewGrid div {
+  flex: 1;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.previewGrid b {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.previewEvent {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.11);
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  font-weight: 900;
+}
+
+.landingSection {
+  max-width: 1180px;
+  margin: 70px auto 0;
+}
+
+.landingSection h2 {
+  font-size: clamp(30px, 4vw, 48px);
+  margin: 8px 0 20px;
+}
+
+.landingSteps,
+.landingFeatureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.landingSteps div,
+.landingFeatureGrid div {
+  border-radius: 22px;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.landingSteps b {
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(96, 165, 250, 0.18);
+  color: #bfdbfe;
+}
+
+.landingSteps p,
+.landingFeatureGrid p,
+.landingFooter p {
+  color: #9fb3ca;
+}
+
+.landingFooter {
+  max-width: 1180px;
+  margin: 70px auto 0;
+  padding: 24px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.profileMiniGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.profileMiniGrid div,
+.profileRankRow {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.profileMiniGrid span,
+.profileRankRow small {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.profileMiniGrid b {
+  display: block;
+  margin-top: 4px;
+  color: #e5edf8;
+}
+
+.profileLeaderboard {
+  display: grid;
+  gap: 10px;
+}
+
+.profileRankRow {
+  display: grid;
+  gap: 5px;
+}
+
+.profileRankRow span {
+  color: #93c5fd;
+  font-weight: 800;
+}
+
+.profileRankRow.topProfile {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.14), rgba(15, 23, 42, 0.85));
+  border-color: rgba(251, 191, 36, 0.32);
+}
+
+.onboardingSteps {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.onboardingSteps div {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.onboardingSteps b {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.bonusObjectiveRow {
+  display: block;
+  margin-top: 4px;
+}
+
+.bonusPassed {
+  color: #86efac;
+  font-weight: 900;
+}
+
+.bonusFailed {
+  color: #fca5a5;
+  font-weight: 900;
+}
+
+@media (max-width: 850px) {
+  .landingHero {
+    grid-template-columns: 1fr;
+  }
+
+  .landingNav,
+  .landingFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .previewGrid {
+    flex-direction: column;
+  }
+
+  .previewGrid div {
+    width: 100%;
+  }
+}
+
+/* Phase 13B - Persistent Profile IDs */
+.uxProfileJoinCard {
+  gap: 14px;
+}
+
+.profileJoinHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.profileJoinHeader h2 {
+  margin: 0 0 4px;
+}
+
+.profileJoinHeader p {
+  margin: 0;
+  opacity: 0.72;
+  font-size: 0.92rem;
+}
+
+.profileStatusBadge {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.72);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.profileStatusBadge.profileLinked {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(22, 101, 52, 0.22);
+}
+
+.profileJoinGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.profileJoinActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profileCodeBox {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  margin-bottom: 10px;
+}
+
+.profileCodeBox span {
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.profileCodeBox b {
+  display: block;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.profileCodeBox button {
+  grid-row: span 2;
+  padding: 8px 10px;
+}
+
+@media (max-width: 760px) {
+  .profileJoinHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profileJoinGrid {
+    grid-template-columns: 1fr;
+  }
+}
