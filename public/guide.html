@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Interrogation - How to Play</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="guideBody">
+
+<header class="guideHero">
+  <div>
+    <p class="eyebrow">OFFICIAL GAME GUIDE</p>
+    <h1>🎭 How to Play The Interrogation</h1>
+    <p>A live social deduction mystery game for streamers, players, and viewers.</p>
+  </div>
+  <a class="guideHomeBtn" href="/">Back Home</a>
+</header>
+
+<nav class="guideNav">
+  <button onclick="showGuide('quick')" class="active">Quick Start</button>
+  <button onclick="showGuide('player')">Players</button>
+  <button onclick="showGuide('streamer')">Streamers</button>
+  <button onclick="showGuide('viewer')">Viewers</button>
+  <button onclick="showGuide('roles')">Roles</button>
+  <button onclick="showGuide('systems')">Game Systems</button>
+</nav>
+
+<main class="guideShell">
+  <section id="guide-quick" class="guidePanel active">
+    <h2>⚡ Quick Start</h2>
+    <div class="guideSteps">
+      <div><b>1</b><h3>Streamer creates a room</h3><p>The streamer opens the Streamer Dashboard, joins as detective, and copies the player invite link.</p></div>
+      <div><b>2</b><h3>Players join</h3><p>Players enter a display name or load a Profile ID to keep points.</p></div>
+      <div><b>3</b><h3>Start the case</h3><p>Every player receives a role, alibi, motive, relationship, evidence fragment, objective, and ability.</p></div>
+      <div><b>4</b><h3>Interrogate</h3><p>The streamer questions players, compares alibis, uses Stream Events, and watches the Detective Director.</p></div>
+      <div><b>5</b><h3>Vote and accuse</h3><p>Viewers and players can vote. The streamer makes the final accusation.</p></div>
+      <div><b>6</b><h3>Reveal the truth</h3><p>The case ending reveals the murderer, points, bonus objectives, and profile progress.</p></div>
+    </div>
+  </section>
+
+  <section id="guide-player" class="guidePanel">
+    <h2>👤 Player Guide</h2>
+    <div class="guideCardGrid">
+      <article><h3>Your goal</h3><p>Talk, defend your alibi, compare stories, reveal useful information, and survive suspicion. If you are the Murderer or Accomplice, mislead the room without exposing yourself.</p></article>
+      <article><h3>Public Alibi</h3><p>Your public alibi is the story everyone can question. Be ready to explain where you were, what you were doing, and who can verify it.</p></article>
+      <article><h3>Private Evidence</h3><p>Your evidence fragment is only part of the truth. Do not assume it solves the case alone.</p></article>
+      <article><h3>Relationship</h3><p>You may trust, suspect, argue with, or have a connection to another player. Use this to create discussion.</p></article>
+      <article><h3>Motive</h3><p>Even innocent players can have suspicious motives. Having a motive does not mean you are guilty.</p></article>
+      <article><h3>Abilities</h3><p>Use your role ability carefully. Some abilities protect, some reveal, some confuse, and some mislead.</p></article>
+    </div>
+
+    <div class="guideWarning">
+      <b>Important:</b> The best way to play is to keep talking. Ask others questions, challenge weak alibis, and explain your own story clearly.
+    </div>
+  </section>
+
+  <section id="guide-streamer" class="guidePanel">
+    <h2>🎥 Streamer / Detective Guide</h2>
+    <div class="guideCardGrid">
+      <article><h3>Start with alibis</h3><p>Ask every player: “Where were you?”, “What were you doing?”, and “Who can confirm it?”</p></article>
+      <article><h3>Use the Detective Director</h3><p>The Director gives live suggestions based on votes, contradictions, suspicion, and case intensity.</p></article>
+      <article><h3>Use Stream Events</h3><p>Force Alibis, Random Spotlight, Emergency Vote, and New Lead are pacing tools. Use them when the round slows down.</p></article>
+      <article><h3>Do not trust evidence blindly</h3><p>Evidence fragments are incomplete. Some may be corrupted or manipulated.</p></article>
+      <article><h3>Watch contradictions</h3><p>If a player changes location or story, pressure them. Contradictions are conversation fuel.</p></article>
+      <article><h3>Final accusation</h3><p>Use alibis, motives, viewer votes, suspicion, and behavior before making the final call.</p></article>
+    </div>
+
+    <div class="guideExample">
+      <h3>Good detective questions</h3>
+      <ul>
+        <li>Why were you near that area?</li>
+        <li>Who can confirm your story?</li>
+        <li>Why do you trust that player?</li>
+        <li>Your motive looks suspicious. Explain it.</li>
+        <li>Your current statement conflicts with your earlier alibi. Which one is true?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="guide-viewer" class="guidePanel">
+    <h2>🗳 Viewer Guide</h2>
+    <p>Viewers do not need a Twitch login or account. They can open the Viewer Vote link and vote for who they think the murderer is.</p>
+    <div class="guideCardGrid">
+      <article><h3>Vote anytime</h3><p>You can change your vote before the reveal.</p></article>
+      <article><h3>Watch the overlay</h3><p>The OBS overlay shows suspects, votes, contradictions, stream events, and case intensity.</p></article>
+      <article><h3>Help the streamer</h3><p>Chat can suggest questions, point out contradictions, and push the detective toward suspicious players.</p></article>
+    </div>
+  </section>
+
+  <section id="guide-roles" class="guidePanel">
+    <h2>🎭 Roles</h2>
+    <div class="roleGuideGrid">
+      <article><h3>😈 Murderer</h3><p>Hide your real truth, survive accusation, and use sabotage tools to mislead the investigation.</p></article>
+      <article><h3>🕶 Accomplice</h3><p>Protect the murderer without looking coordinated.</p></article>
+      <article><h3>👁 Witness</h3><p>You usually have stronger information, but it is still not the full truth.</p></article>
+      <article><h3>🧍 Observer</h3><p>Question alibis and watch for contradictions.</p></article>
+      <article><h3>🚶 Drifter</h3><p>Your movement may look suspicious. Explain yourself clearly.</p></article>
+      <article><h3>🛡 Guard</h3><p>Protect a player and reduce suspicion.</p></article>
+      <article><h3>📰 Journalist</h3><p>Publish reports that create pressure.</p></article>
+      <article><h3>🕵 Informant</h3><p>Receive private hints and guide questions carefully.</p></article>
+      <article><h3>⚖ Lawyer</h3><p>Defend a player and reduce suspicion.</p></article>
+      <article><h3>📊 Analyst</h3><p>Use system-style analysis to help compare timelines.</p></article>
+    </div>
+  </section>
+
+  <section id="guide-systems" class="guidePanel">
+    <h2>🧩 Game Systems</h2>
+    <div class="guideCardGrid">
+      <article><h3>Profiles</h3><p>Players and hosts can create Profile IDs to keep points, ranks, stats, and progress.</p></article>
+      <article><h3>Bonus Objectives</h3><p>Each role may have a secret bonus goal. Completing it earns extra progress.</p></article>
+      <article><h3>Evidence Fragments</h3><p>Evidence is intentionally incomplete. Combine fragments through discussion.</p></article>
+      <article><h3>Murderer Sabotage</h3><p>The murderer can use tools like false leads, framing, corrupted logs, and blurred evidence.</p></article>
+      <article><h3>Case Intensity</h3><p>The round gets more intense when suspicion rises, votes spike, contradictions appear, or events trigger.</p></article>
+      <article><h3>Feedback Center</h3><p>Players and streamers can submit feedback, bug reports, and feature ideas to help improve the game.</p></article>
+    </div>
+  </section>
+</main>
+
+<script src="guide.js"></script>
+</body>
+</html>

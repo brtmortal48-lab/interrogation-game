@@ -7518,3 +7518,118 @@ button.danger {
     font-size: 12px;
   }
 }
+
+
+/* Phase 14E - Final How To Play Guide */
+.guideBody {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(168,85,247,0.14), transparent 28%),
+    #07111f;
+  color: #e5eefc;
+  padding: 24px;
+}
+
+.guideHero {
+  max-width: 1180px;
+  margin: 0 auto 18px;
+  padding: 28px;
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+}
+
+.guideHero h1 { margin: 6px 0 8px; font-size: clamp(32px, 5vw, 54px); }
+.guideHero p { margin: 0; color: #9fb3cf; max-width: 720px; }
+.guideHomeBtn { text-decoration: none; padding: 12px 16px; border-radius: 14px; background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(96,165,250,0.35); }
+
+.guideNav {
+  max-width: 1180px;
+  margin: 0 auto 18px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 10px;
+  z-index: 5;
+  backdrop-filter: blur(14px);
+}
+
+.guideNav button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.guideNav button.active,
+.guideNav button:hover {
+  background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(168,85,247,0.22));
+  color: #fff;
+}
+
+.guideShell { max-width: 1180px; margin: 0 auto; }
+.guidePanel { display: none; }
+.guidePanel.active { display: block; }
+.guidePanel h2 { font-size: 32px; margin: 0 0 18px; }
+
+.guideSteps,
+.guideCardGrid,
+.roleGuideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.guideSteps > div,
+.guideCardGrid article,
+.roleGuideGrid article,
+.guideExample,
+.guideWarning {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.18);
+}
+
+.guideSteps b {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(59,130,246,0.22);
+  color: #bfdbfe;
+  margin-bottom: 10px;
+}
+
+.guideSteps h3,
+.guideCardGrid h3,
+.roleGuideGrid h3 { margin: 0 0 8px; }
+.guideSteps p,
+.guideCardGrid p,
+.roleGuideGrid p,
+.guideExample li { color: #a7b7cf; line-height: 1.55; }
+.guideWarning { margin-top: 16px; border-color: rgba(251,191,36,0.28); background: rgba(120, 53, 15, 0.22); color: #fde68a; }
+.guideExample { margin-top: 18px; }
+.guideExample ul { margin-bottom: 0; }
+
+@media (max-width: 720px) {
+  .guideBody { padding: 12px; }
+  .guideHero { flex-direction: column; align-items: flex-start; padding: 22px; }
+  .guideNav { position: static; }
+  .guideNav button { flex: 1 1 auto; }
+}
