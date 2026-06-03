@@ -17,6 +17,7 @@
     <button onclick="openPatchNotes()">Patch Notes</button>
     <button onclick="openFeedback()">Feedback</button>
     <button onclick="openHowTo()">Guide</button>
+    <a class="adminNavLink" href="/admin.html">Admin</a>
   </nav>
 </header>
 
@@ -206,7 +207,8 @@
   </div>
 </div>
 
-<script src="/socket.io/socket.io.js">
+<script src="/socket.io/socket.io.js"></script>
+<script>
 function openHowTo(){ const modal=document.getElementById('howToModal'); if(modal) modal.style.display='flex'; }
 function closeHowTo(){ const modal=document.getElementById('howToModal'); if(modal) modal.style.display='none'; }
 function showGuideTab(tab, btn){

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Interrogation - Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="adminBody">
+
+<main class="adminShell">
+  <section id="adminLogin" class="panel adminLoginCard">
+    <p class="eyebrow">PRIVATE ADMIN</p>
+    <h1>Admin Panel</h1>
+    <p class="hint">Feedback inbox and analytics are private. Patch notes remain public for everyone.</p>
+
+    <div class="adminLoginGrid">
+      <input id="adminUsername" placeholder="Username" autocomplete="username">
+      <input id="adminPassword" placeholder="Password" type="password" autocomplete="current-password">
+      <button onclick="loginAdmin()">Open Admin Panel</button>
+    </div>
+
+    <div id="adminLoginStatus" class="adminStatus"></div>
+  </section>
+
+  <section id="adminDashboard" style="display:none;">
+    <header class="adminHeader">
+      <div>
+        <p class="eyebrow">THE INTERROGATION</p>
+        <h1>Feedback & Analytics</h1>
+      </div>
+      <div class="adminHeaderActions">
+        <button onclick="refreshAdmin()">Refresh</button>
+        <a href="/" class="adminHomeLink">Back Home</a>
+      </div>
+    </header>
+
+    <section class="adminStatsGrid">
+      <div class="adminStat"><span>Games Started</span><b id="statGamesStarted">0</b></div>
+      <div class="adminStat"><span>Games Finished</span><b id="statGamesFinished">0</b></div>
+      <div class="adminStat"><span>Detective Win Rate</span><b id="statSuccessRate">0%</b></div>
+      <div class="adminStat"><span>Murderer Win Rate</span><b id="statMurdererRate">0%</b></div>
+      <div class="adminStat"><span>Average Players</span><b id="statAvgPlayers">0</b></div>
+      <div class="adminStat"><span>Feedback Received</span><b id="statFeedback">0</b></div>
+    </section>
+
+    <div class="adminGrid">
+      <section class="panel adminPanelLarge">
+        <div class="adminSectionHeader">
+          <div>
+            <h2>Feedback Inbox</h2>
+            <p class="hint">Newest feedback appears first.</p>
+          </div>
+          <select id="feedbackFilter" onchange="renderFeedback()">
+            <option value="all">All</option>
+            <option value="bug">Bug</option>
+            <option value="feature">Feature</option>
+            <option value="ui">UI</option>
+            <option value="balance">Balance</option>
+            <option value="general">General</option>
+          </select>
+        </div>
+        <div id="feedbackList" class="feedbackInboxList"></div>
+      </section>
+
+      <aside class="adminSideStack">
+        <section class="panel">
+          <h2>Role Counts</h2>
+          <div id="roleCounts" class="adminMiniList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Ability Usage</h2>
+          <div id="abilityUse" class="adminMiniList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Public Patch Notes</h2>
+          <p class="hint">Visible to everyone from the normal Patch Notes button.</p>
+          <div id="adminPatchNotes" class="adminMiniList"></div>
+        </section>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -157,6 +157,19 @@ io.on("connection", (socket) => {
     socket.emit("patchNotes", getPatchNotes());
   });
 
+  socket.on("requestAdminData", ({ username, password }) => {
+    if (!adminCredentialsOk(username, password)) {
+      socket.emit("adminError", "Invalid admin username or password.");
+      return;
+    }
+
+    socket.emit("adminData", {
+      feedback: communityFeedback.slice(0, 150),
+      analytics: buildAdminAnalytics(),
+      patchNotes: getPatchNotes()
+    });
+  });
+
   socket.on("joinRoom", ({ roomId, role, name, hostKey, profileCode, hostProfileCode }) => {
     if (!roomId) return;
 
@@ -2609,6 +2622,28 @@ function recordGameAnalytics(room, detectiveSolved) {
     analytics.roleCounts[p.role] = (analytics.roleCounts[p.role] || 0) + 1;
   });
   saveAnalytics();
+}
+
+function adminCredentialsOk(username, password) {
+  const adminUser = process.env.ADMIN_USERNAME || "admin";
+  const adminPass = process.env.ADMIN_PASSWORD || "change-me-now";
+
+  return String(username || "") === adminUser && String(password || "") === adminPass;
+}
+
+function buildAdminAnalytics() {
+  const gamesFinished = analytics.gamesFinished || 0;
+  const detectiveWins = analytics.detectiveWins || 0;
+  const murdererWins = analytics.murdererWins || 0;
+  const totalPlayers = analytics.totalPlayersAcrossGames || 0;
+
+  return {
+    ...analytics,
+    successRate: gamesFinished ? Math.round((detectiveWins / gamesFinished) * 100) : 0,
+    murdererWinRate: gamesFinished ? Math.round((murdererWins / gamesFinished) * 100) : 0,
+    averagePlayers: gamesFinished ? Math.round((totalPlayers / gamesFinished) * 10) / 10 : 0,
+    feedbackCount: communityFeedback.length
+  };
 }
 
 function getPatchNotes() {
