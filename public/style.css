@@ -7635,50 +7635,246 @@ button.danger {
 }
 
 
-/* Phase 14F hotfix — keep feedback/patch controls from blocking the game UI */
-.feedbackTopBtn,
-.patchTopBtn,
-.feedbackFloatingBtn {
-  top: auto !important;
-  right: 18px !important;
-  left: auto !important;
-  z-index: 35 !important;
-  width: auto !important;
-  max-width: 170px !important;
-  padding: 9px 12px !important;
-  border-radius: 999px !important;
-  font-size: 13px !important;
-  backdrop-filter: blur(12px);
+/* === Phase 14G: Guide access + OBS viewport repair === */
+.utilityDock {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 90;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 45px rgba(0,0,0,0.28);
 }
-.feedbackTopBtn,
-.feedbackFloatingBtn {
-  bottom: 18px !important;
+
+.utilityDock button {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #e5e7eb;
+  white-space: nowrap;
 }
+
+.utilityDock button:hover {
+  background: rgba(59, 130, 246, 0.95);
+  opacity: 1;
+}
+
+/* Disable old floating buttons if any older HTML still contains them */
+.feedbackFloatingBtn,
+.feedbackTopBtn,
 .patchTopBtn {
-  bottom: 62px !important;
+  position: static !important;
+  inset: auto !important;
 }
-.landingNav nav {
+
+.landingNav {
+  padding-right: 18px;
+}
+
+.landingNavLinks {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
 }
-.landingNav nav button,
-.landingNav nav a {
+
+.landingNavLinks a,
+.landingNavLinks button {
+  margin: 0;
   white-space: nowrap;
 }
-@media (max-width: 760px) {
-  .feedbackTopBtn,
-  .patchTopBtn,
-  .feedbackFloatingBtn {
-    right: 10px !important;
-    font-size: 12px !important;
-    padding: 8px 10px !important;
-    opacity: 0.92;
+
+/* Give fixed guide dock breathing room */
+.streamerBody,
+.playerBody,
+.votePageShell {
+  scroll-padding-top: 78px;
+}
+
+.uxTopBar,
+.uxPlayerTop,
+.voteHero {
+  margin-top: 44px;
+}
+
+/* OBS overlay must fit inside one capture viewport. No browser scroll needed. */
+.overlayBody {
+  width: 100vw;
+  height: 100vh;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+.broadcastOverlay {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+  gap: 9px;
+  padding: 16px 20px !important;
+}
+
+.broadcastTop {
+  margin-bottom: 0 !important;
+}
+
+.broadcastTop h1 {
+  font-size: clamp(25px, 3.2vw, 40px) !important;
+}
+
+.broadcastLabel {
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.broadcastTimer {
+  padding: 8px 14px !important;
+}
+
+.broadcastTimer strong {
+  font-size: clamp(28px, 4vw, 42px) !important;
+}
+
+.broadcastCase {
+  margin-bottom: 0 !important;
+  padding: 12px 14px !important;
+  border-left-width: 6px !important;
+}
+
+#incident {
+  font-size: clamp(18px, 2.6vw, 29px) !important;
+  line-height: 1.15 !important;
+}
+
+.broadcastStatusGrid {
+  gap: 9px !important;
+  margin-bottom: 0 !important;
+}
+
+.broadcastCard {
+  padding: 9px 11px !important;
+  min-height: 0 !important;
+}
+
+.broadcastCard span {
+  font-size: 11px !important;
+}
+
+.broadcastCard b {
+  font-size: clamp(16px, 2vw, 22px) !important;
+  line-height: 1.05 !important;
+}
+
+.broadcastEventBanner,
+.broadcastTwist,
+.broadcastIntensity {
+  margin: 0 !important;
+}
+
+.broadcastEventBanner {
+  padding: 9px 12px !important;
+  font-size: clamp(16px, 2.2vw, 24px) !important;
+}
+
+.broadcastIntensity {
+  padding: 8px 10px !important;
+}
+
+.broadcastGrid {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  align-items: stretch !important;
+}
+
+.broadcastPanel {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 10px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.broadcastPanel h2 {
+  font-size: clamp(14px, 1.4vw, 18px) !important;
+  margin-bottom: 7px !important;
+  flex: 0 0 auto;
+}
+
+#susBoard,
+#viewerVotes,
+#broadcastDirector,
+#broadcastContradictions,
+#liveStatements {
+  min-height: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+.broadcastSusRow,
+.broadcastStatement,
+.broadcastContradiction,
+.broadcastDirectorItem {
+  font-size: clamp(12px, 1.12vw, 16px) !important;
+  padding: 7px !important;
+  margin-bottom: 6px !important;
+}
+
+.broadcastMeter,
+.broadcastIntensityMeter {
+  height: 8px !important;
+}
+
+.broadcastResult {
+  position: fixed;
+  inset: 14px;
+  z-index: 80;
+  overflow: hidden;
+  max-height: calc(100vh - 28px);
+}
+
+.broadcastFooter {
+  font-size: 11px !important;
+  opacity: 0.72;
+  padding-top: 2px !important;
+}
+
+@media (max-width: 900px) {
+  .utilityDock {
+    position: static;
+    margin: 0 0 12px auto;
+    width: max-content;
+    max-width: 100%;
+    border-radius: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
-  .feedbackTopBtn,
-  .feedbackFloatingBtn { bottom: 12px !important; }
-  .patchTopBtn { bottom: 52px !important; }
-  .landingNav nav {
-    width: 100%;
-    justify-content: center;
+
+  .uxTopBar,
+  .uxPlayerTop,
+  .voteHero {
+    margin-top: 0;
+  }
+
+  .broadcastGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
