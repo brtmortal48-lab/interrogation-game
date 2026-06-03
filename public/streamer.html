@@ -48,6 +48,7 @@
   <button class="uxTabBtn" data-view="board" onclick="switchStreamerView('board')">Board</button>
   <button class="uxTabBtn" data-view="chat" onclick="switchStreamerView('chat')">Chat</button>
   <button class="uxTabBtn" data-view="results" onclick="switchStreamerView('results')">Results</button>
+  <button class="uxTabBtn" data-view="leaderboard" onclick="switchStreamerView('leaderboard')">Profiles</button>
 </nav>
 
 <div id="incident" class="uxIncident">Waiting for case...</div>
@@ -151,6 +152,16 @@
     </section>
   </section>
 
+  <section class="uxTabPanel" data-view="leaderboard">
+    <section class="panel uxCardLarge">
+      <div class="uxSectionTitle">
+        <h2>🏆 Player Profiles</h2>
+        <p>Local session points and reputation. Full account profiles can come later.</p>
+      </div>
+      <div id="profileLeaderboard" class="profileLeaderboard"><p class="hint">Play and reveal a case to build profiles.</p></div>
+    </section>
+  </section>
+
   <section class="uxTabPanel" data-view="results">
     <section class="panel uxCardLarge">
       <h2>🏁 Case Result</h2>
@@ -204,6 +215,25 @@
       <button onclick="toggleMusic()">Music: <span id="musicState">Off</span></button>
     </div>
     <p class="hint">Set Round Time to 0 for unlimited Story Mode.</p>
+  </div>
+</div>
+
+
+<div id="firstRunModal" class="modalOverlay" style="display:none;">
+  <div class="modal firstRunModal">
+    <button class="closeBtn" onclick="closeFirstRunGuide(true)">×</button>
+    <h2>Welcome, Detective</h2>
+    <p class="hint">Run a round in four simple steps.</p>
+    <div class="onboardingSteps">
+      <div><b>1</b><span>Join or create a room.</span></div>
+      <div><b>2</b><span>Copy the player link and invite players.</span></div>
+      <div><b>3</b><span>Add the OBS overlay link to your stream.</span></div>
+      <div><b>4</b><span>Start the case, question alibis, and reveal.</span></div>
+    </div>
+    <div class="modalActions">
+      <button onclick="closeFirstRunGuide(true)">Got it</button>
+      <button onclick="closeFirstRunGuide(false)">Show next time</button>
+    </div>
   </div>
 </div>
 

@@ -2,96 +2,82 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Interrogation</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="homeBody">
+<body class="landingBody">
 
-<button class="helpBtn" onclick="openHowTo()">How to Play</button>
-<button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
+<header class="landingNav">
+  <div class="landingLogo">🎭 The Interrogation</div>
+  <nav>
+    <a href="#how">How it works</a>
+    <a href="#features">Features</a>
+    <button onclick="createRoom()">Create Room</button>
+  </nav>
+</header>
 
-<div class="hero">
-  <div class="heroBadge">LIVE SOCIAL DEDUCTION GAME</div>
+<main class="landingHero">
+  <section class="landingHeroText">
+    <p class="eyebrow">LIVE SOCIAL DEDUCTION GAME</p>
+    <h1>Turn your stream into a live mystery.</h1>
+    <p class="landingSub">Create a room, invite players, add the OBS overlay, and let your community solve the case together.</p>
 
-  <h1>The Interrogation</h1>
-
-  <p class="heroSubtitle">
-    A streamer-friendly mystery game where one detective questions real players,
-    reads unreliable clues, and exposes the culprit live.
-  </p>
-
-  <div class="heroActions">
-    <button class="bigBtn" onclick="createRoom()">Create Room</button>
-    <a class="ghostBtn" href="#join">Join Existing Room</a>
-  </div>
-</div>
-
-<div class="featureStrip">
-  <div>🎭 Hidden Roles</div>
-  <div>🧾 Unreliable Evidence</div>
-  <div>🎥 OBS Overlay</div>
-  <div>💬 Live Interrogation</div>
-</div>
-
-<div id="join" class="landing">
-  <div class="landingGrid">
-    <div class="panel premiumPanel">
-      <h2>Host a Game</h2>
-      <p>Create a private locked room, invite players, and stream the detective dashboard.</p>
-      <button onclick="createRoom()">Create Room</button>
-      <div id="createdRoom" class="createdRoom"></div>
+    <div class="landingActions">
+      <button class="landingPrimary" onclick="createRoom()">Create Streamer Room</button>
+      <a class="landingSecondary" href="#how">See how it works</a>
     </div>
 
-    <div class="panel premiumPanel">
-      <h2>Join a Game</h2>
-      <p>Enter a room code from the streamer or your Discord party.</p>
-      <input id="joinRoomCode" placeholder="Room code">
-      <button onclick="joinPlayer()">Join as Player</button>
-      <button onclick="joinStreamer()">Join as Streamer</button>
-      <p class="hint">Streamer rooms are locked by default. Use the private host link if you are the streamer.</p>
-    </div>
-  </div>
-</div>
+    <div id="createStatus" class="landingStatus"></div>
+  </section>
 
-<footer class="footerCredit">
-  The Interrogation — developed by Zameerul Haq, Sri Lanka.
+  <section class="landingPreview">
+    <div class="previewTop">
+      <span>LIVE CASE</span>
+      <b>03:42</b>
+    </div>
+    <div class="previewCase">CASE #247: Emergency Lockdown</div>
+    <div class="previewGrid">
+      <div><span>Players</span><b>8</b></div>
+      <div><span>Viewer Vote</span><b>42%</b></div>
+      <div><span>Focus</span><b>Interrogating</b></div>
+    </div>
+    <div class="previewEvent">🎯 RANDOM SPOTLIGHT<br><small>Someone must defend their alibi.</small></div>
+  </section>
+</main>
+
+<section id="how" class="landingSection">
+  <p class="eyebrow">SETUP</p>
+  <h2>Start in four steps</h2>
+  <div class="landingSteps">
+    <div><b>1</b><h3>Create a room</h3><p>The streamer gets private controls and room links.</p></div>
+    <div><b>2</b><h3>Invite players</h3><p>Players join with a phone or browser and receive roles.</p></div>
+    <div><b>3</b><h3>Add OBS overlay</h3><p>Show suspects, votes, events, contradictions, and reveal.</p></div>
+    <div><b>4</b><h3>Solve the case</h3><p>Question alibis, trigger events, accuse, and reveal the truth.</p></div>
+  </div>
+</section>
+
+<section id="features" class="landingSection landingFeatureGrid">
+  <div><h3>🧭 Alibis</h3><p>Every player has a public story to defend.</p></div>
+  <div><h3>🎭 Hidden roles</h3><p>Murderer, witness, accomplice, analyst, guard, journalist, and more.</p></div>
+  <div><h3>🗳 Viewer voting</h3><p>Let stream chat vote without Twitch login.</p></div>
+  <div><h3>🚨 Stream events</h3><p>Force alibis, random spotlight, emergency vote, and new leads.</p></div>
+  <div><h3>🏆 Player profiles</h3><p>Session points, win rate, titles, and bonus objectives.</p></div>
+  <div><h3>🎥 OBS ready</h3><p>Designed for stream overlays and live community play.</p></div>
+</section>
+
+<footer class="landingFooter">
+  <button onclick="openContact()">Contact Developer</button>
+  <p>Created by Zameerul Haq • Sri Lanka</p>
 </footer>
-
-<div id="howToModal" class="modalOverlay" style="display:none;">
-  <div class="modal">
-    <button class="closeBtn" onclick="closeHowTo()">×</button>
-    <h2>How to Play</h2>
-
-    <h3>Streamer</h3>
-    <p>You are the detective. Read evidence, question players, build a theory, pressure suspects, then accuse one player before revealing the truth.</p>
-
-    <h3>Players</h3>
-    <p>Each player gets a secret role and private observation. Your clue may be true, incomplete, or misleading.</p>
-
-    <h3>Goal</h3>
-    <p>The culprit tries to escape. Witnesses try to help. Misinformed players may accidentally mislead. Observers survive by reading the room.</p>
-  </div>
-</div>
 
 <div id="contactModal" class="modalOverlay" style="display:none;">
   <div class="modal contactModal">
     <button class="closeBtn" onclick="closeContact()">×</button>
     <h2>Contact Developer</h2>
-
-    <div class="contactRow">
-      <b>Developer</b>
-      <p>Zameerul Haq</p>
-    </div>
-
-    <div class="contactRow">
-      <b>Email</b>
-      <p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p>
-    </div>
-
-    <div class="contactRow">
-      <b>Country</b>
-      <p>Sri Lanka</p>
-    </div>
+    <div class="contactRow"><b>Developer</b><p>Zameerul Haq</p></div>
+    <div class="contactRow"><b>Email</b><p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p></div>
+    <div class="contactRow"><b>Country</b><p>Sri Lanka</p></div>
   </div>
 </div>
 
@@ -100,69 +86,20 @@
 const socket = io();
 
 function createRoom() {
-  socket.emit("createRoom");
+  document.getElementById('createStatus').innerText = 'Creating room...';
+  socket.emit('createRoom');
 }
 
-socket.on("roomCreated", ({ roomId, hostKey }) => {
-  const playerLink = `${window.location.origin}/player.html?room=${roomId}`;
-  const streamerLink = `${window.location.origin}/streamer.html?room=${roomId}&host=${hostKey}`;
-  const overlayLink = `${window.location.origin}/overlay.html?room=${roomId}`;
-
-  document.getElementById("createdRoom").innerHTML = `
-    <h3>Room Created: ${roomId}</h3>
-    <p class="lockNotice">🔒 Streamer room is locked. Keep the private streamer link safe.</p>
-
-    <p><b>Player Invite Link:</b></p>
-    <input id="playerInvite" value="${playerLink}" readonly>
-    <button onclick="copyText('playerInvite')">Copy Player Link</button>
-
-    <p><b>Private Streamer Host Link:</b></p>
-    <input id="streamerInvite" value="${streamerLink}" readonly>
-    <button onclick="copyText('streamerInvite')">Copy Host Link</button>
-
-    <p><b>OBS Overlay Link:</b></p>
-    <input id="overlayInvite" value="${overlayLink}" readonly>
-    <button onclick="copyText('overlayInvite')">Copy Overlay Link</button>
-
-    <p>
-      <a class="linkBtn" href="${streamerLink}">Open Streamer Panel</a>
-    </p>
-  `;
+socket.on('roomCreated', ({ roomId, hostKey }) => {
+  window.location.href = `/streamer.html?room=${roomId}&host=${hostKey}`;
 });
 
-function joinPlayer() {
-  const code = document.getElementById("joinRoomCode").value.trim().toUpperCase();
-  if (!code) return alert("Enter room code.");
-  window.location.href = `/player.html?room=${code}`;
-}
-
-function joinStreamer() {
-  const code = document.getElementById("joinRoomCode").value.trim().toUpperCase();
-  if (!code) return alert("Enter room code.");
-  window.location.href = `/streamer.html?room=${code}`;
-}
-
-function copyText(id) {
-  const el = document.getElementById(id);
-  el.select();
-  el.setSelectionRange(0, 99999);
-  navigator.clipboard.writeText(el.value);
-}
-
-function openHowTo() {
-  document.getElementById("howToModal").style.display = "flex";
-}
-
-function closeHowTo() {
-  document.getElementById("howToModal").style.display = "none";
-}
-
 function openContact() {
-  document.getElementById("contactModal").style.display = "flex";
+  document.getElementById('contactModal').style.display = 'flex';
 }
 
 function closeContact() {
-  document.getElementById("contactModal").style.display = "none";
+  document.getElementById('contactModal').style.display = 'none';
 }
 </script>
 

@@ -146,6 +146,8 @@ socket.on("privateData", (data) => {
   document.getElementById("abilityDescription").innerText =
     data.abilityDescription || "Your role ability will appear when the round starts.";
 
+  renderProfileStats(data.profileStats);
+
   const hiddenTruthBox = document.getElementById("hiddenTruthBox");
   const hiddenTruth = document.getElementById("hiddenTruth");
 
@@ -296,6 +298,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+
+function renderProfileStats(stats) {
+  if (!stats) return;
+  const title = document.getElementById("profileTitle");
+  const points = document.getElementById("profilePoints");
+  const games = document.getElementById("profileGames");
+  const winRate = document.getElementById("profileWinRate");
+
+  if (title) title.innerText = stats.title || "Rookie";
+  if (points) points.innerText = stats.points || 0;
+  if (games) games.innerText = stats.games || 0;
+  if (winRate) winRate.innerText = `${stats.winRate || 0}%`;
+}
 
 function renderCaseFile(caseFile) {
   const box = document.getElementById("caseFile");

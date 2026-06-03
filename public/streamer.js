@@ -35,10 +35,24 @@ window.onload = () => {
   }
 
   restoreStreamerView();
+  maybeShowFirstRunGuide();
 
   if (roomFromUrl) join();
 };
 
+
+
+function maybeShowFirstRunGuide() {
+  if (localStorage.getItem("interrogationSeenStreamerGuide") === "yes") return;
+  const modal = document.getElementById("firstRunModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeFirstRunGuide(remember) {
+  if (remember) localStorage.setItem("interrogationSeenStreamerGuide", "yes");
+  const modal = document.getElementById("firstRunModal");
+  if (modal) modal.style.display = "none";
+}
 
 function switchStreamerView(view) {
   document.querySelectorAll('.uxTabPanel').forEach((panel) => {
@@ -408,6 +422,7 @@ socket.on("roomUpdate", (data) => {
   renderTheoryBoard();
   renderVoteBoard(data.viewerVotes || []);
   renderPlayerVoteBoard(data.playerVotes || []);
+  renderProfileLeaderboard(data.leaderboard || []);
 
   document.getElementById("roundNumber").innerText = data.roundNumber || 0;
   document.getElementById("playerCount").innerText = `${players.length} / ${maxPlayers}`;
@@ -433,6 +448,7 @@ socket.on("roundStarted", (data) => {
   renderTheoryBoard();
   renderVoteBoard(data.viewerVotes || []);
   renderPlayerVoteBoard(data.playerVotes || []);
+  renderProfileLeaderboard(data.leaderboard || []);
   if (data.activeStreamEvent) renderStreamEvent(data.activeStreamEvent);
 });
 
@@ -536,6 +552,7 @@ socket.on("reveal", (data) => {
     </div>
   `;
 
+  renderProfileLeaderboard((data.players || []).map(p => p.profileStats).filter(Boolean));
   addSystemMessage("Truth revealed.");
 });
 
@@ -568,6 +585,27 @@ function updateTimerDisplay(timeLeft) {
 
   if (timeLeft <= 30) timer.classList.add("timerDanger");
   else if (timeLeft <= 60) timer.classList.add("timerWarning");
+}
+
+
+function renderProfileLeaderboard(list) {
+  const box = document.getElementById("profileLeaderboard");
+  if (!box) return;
+
+  const rows = (list || []).filter(Boolean).sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, 10);
+
+  if (!rows.length) {
+    box.innerHTML = `<p class="hint">Profiles appear after players complete rounds.</p>`;
+    return;
+  }
+
+  box.innerHTML = rows.map((p, index) => `
+    <div class="profileRankRow ${index === 0 ? "topProfile" : ""}">
+      <b>#${index + 1} ${escapeHtml(p.name || "Player")}</b>
+      <span>${escapeHtml(p.title || "Rookie")}</span>
+      <small>${p.points || 0} pts • ${p.games || 0} games • ${p.winRate || 0}% win</small>
+    </div>
+  `).join("");
 }
 
 function renderVoteBoard(votes) {

@@ -11,6 +11,8 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const rooms = {};
+const playerProfiles = {};
+
 const DEFAULT_SETTINGS = {
   minPlayers: 2,
   maxPlayers: 10,
@@ -106,7 +108,8 @@ io.on("connection", (socket) => {
         bonusTargetId: null,
         bonusTargetName: null,
         score: 0,
-        pressure: null
+        pressure: null,
+        profileKey: profileKey(cleanName)
       });
     }
 
@@ -531,6 +534,7 @@ io.on("connection", (socket) => {
     });
 
     evaluateBonusObjectives(room, murderer, accused, success);
+    updatePlayerProfiles(room, success);
 
     const witnesses = room.players.filter((p) => p.role === "Witness");
     const escaped = !success && murderer ? murderer.name : null;
@@ -560,6 +564,7 @@ io.on("connection", (socket) => {
         confidence: p.observationQuality,
         bonusObjective: p.bonusObjective,
         bonusCompleted: p.bonusCompleted,
+        profileStats: getProfileStats(p.name),
         suspicion: p.suspicion,
         score: p.score,
         gained: p.lastGained || 0
@@ -1574,12 +1579,72 @@ function generateResolutionSteps(room, murderer, accused, success) {
   return steps;
 }
 
+
+function profileKey(name) {
+  return sanitizeName(name).toLowerCase().replace(/[^a-z0-9]+/g, "_") || "anonymous";
+}
+
+function ensureProfile(name) {
+  const key = profileKey(name);
+  if (!playerProfiles[key]) {
+    playerProfiles[key] = {
+      name: sanitizeName(name),
+      games: 0,
+      wins: 0,
+      points: 0,
+      murdererEscapes: 0,
+      casesSolved: 0,
+      bonusCompleted: 0,
+      bestRole: "Rookie"
+    };
+  }
+  return playerProfiles[key];
+}
+
+function getProfileStats(name) {
+  const profile = ensureProfile(name);
+  const winRate = profile.games ? Math.round((profile.wins / profile.games) * 100) : 0;
+  const title = profile.points >= 1000 ? "Case Legend" : profile.points >= 500 ? "Senior Detective" : profile.points >= 250 ? "Sharp Witness" : profile.points >= 100 ? "Trusted Player" : "Rookie";
+  profile.bestRole = title;
+  return { ...profile, winRate, title };
+}
+
+function updatePlayerProfiles(room, detectiveSuccess) {
+  const murderer = room.players.find((p) => p.id === room.incident?.culpritId);
+
+  room.players.forEach((p) => {
+    const profile = ensureProfile(p.name);
+    const isMurdererSide = p.role === "Murderer" || p.role === "Accomplice";
+    const won = isMurdererSide ? !detectiveSuccess : detectiveSuccess;
+    const bonus = Boolean(p.bonusCompleted);
+    const points = (p.lastGained || 0) + (bonus ? 35 : 0) + (won ? 15 : 0);
+
+    profile.games += 1;
+    profile.points += points;
+    if (won) profile.wins += 1;
+    if (bonus) profile.bonusCompleted += 1;
+    if (p.role === "Murderer" && !detectiveSuccess) profile.murdererEscapes += 1;
+    if (!isMurdererSide && detectiveSuccess) profile.casesSolved += 1;
+
+    p.profileStats = getProfileStats(p.name);
+    p.profilePointsGained = points;
+  });
+}
+
+function profileLeaderboard() {
+  return Object.values(playerProfiles)
+    .map((p) => ({ ...getProfileStats(p.name) }))
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 10);
+}
+
 function publicPlayers(players) {
   return players.map((p) => ({
     id: p.id,
     name: p.name,
     suspicion: p.suspicion || 0,
     score: p.score || 0,
+    profileStats: getProfileStats(p.name),
     publicAlibi: p.publicAlibi || "No alibi yet."
   }));
 }
@@ -1592,6 +1657,7 @@ function emitRoomUpdate(roomId) {
     players: publicPlayers(room.players),
     viewerVotes: voteSummary(room),
     playerVotes: playerVoteSummary(room),
+    leaderboard: profileLeaderboard(),
     activeStreamEvent: room.activeStreamEvent,
     state: room.state,
     roundNumber: room.roundNumber,
