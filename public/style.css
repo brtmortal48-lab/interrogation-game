@@ -2452,3 +2452,807 @@ select {
     font-size: 42px;
   }
 }
+
+/* Phase 12D — UX cleanup: less clutter, better grouping, usable game UI */
+:root {
+  --ux-bg: #07111f;
+  --ux-panel: rgba(15, 23, 42, 0.82);
+  --ux-panel-2: rgba(17, 34, 64, 0.72);
+  --ux-line: rgba(148, 163, 184, 0.18);
+  --ux-text: #e5edf7;
+  --ux-muted: #93a4b8;
+  --ux-accent: #38bdf8;
+  --ux-good: #22c55e;
+  --ux-warn: #f59e0b;
+  --ux-danger: #ef4444;
+  --ux-radius: 18px;
+}
+
+.uxBody {
+  background:
+    radial-gradient(circle at 15% 5%, rgba(56,189,248,0.14), transparent 32%),
+    radial-gradient(circle at 85% 10%, rgba(147,51,234,0.12), transparent 28%),
+    linear-gradient(180deg, #07111f 0%, #0b1220 100%);
+  color: var(--ux-text);
+}
+
+.uxTopBar,
+.uxPlayerTop {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto minmax(320px, 0.9fr);
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 14px;
+}
+
+.uxBrand h1,
+.uxPlayerTop h1 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.eyebrow {
+  color: var(--ux-accent);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.heroHint,
+.creatorSmall {
+  color: var(--ux-muted);
+}
+
+.uxTimerCard,
+.uxPlayerTimer {
+  text-align: center;
+  padding: 14px 24px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.7));
+  border: 1px solid rgba(56,189,248,0.25);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.32), inset 0 0 24px rgba(56,189,248,0.06);
+}
+
+.uxTimerCard span,
+.uxPlayerTimer span {
+  display: block;
+  color: var(--ux-muted);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.uxTimerCard b,
+.uxPlayerTimer b {
+  display: block;
+  font-size: clamp(36px, 5vw, 62px);
+  line-height: 1;
+}
+
+.uxPrimaryControls,
+.uxJoinCard {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.uxPrimaryControls input,
+.uxJoinCard input {
+  min-width: 130px;
+}
+
+.uxStatusRail,
+.uxPlayerStatus {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.uxStatusRail div,
+.uxPlayerStatus span {
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid var(--ux-line);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.uxStatusRail span,
+.uxPlayerStatus span:not(.uxPlayerStatus span) {
+  color: var(--ux-muted);
+}
+
+.uxStatusRail div span,
+.uxPlayerStatus span {
+  color: var(--ux-muted);
+  font-size: 12px;
+}
+
+.uxStatusRail div b,
+.uxPlayerStatus b {
+  display: block;
+  color: var(--ux-text);
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.uxTabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid var(--ux-line);
+  position: sticky;
+  top: 8px;
+  z-index: 8;
+  backdrop-filter: blur(10px);
+}
+
+.uxTabBtn {
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: rgba(15,23,42,0.72);
+  color: var(--ux-muted);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.uxTabBtn.active {
+  color: white;
+  background: linear-gradient(135deg, rgba(14,165,233,0.9), rgba(99,102,241,0.72));
+  border-color: rgba(255,255,255,0.14);
+}
+
+.uxIncident {
+  margin: 14px 0;
+  padding: 14px 18px;
+  border-radius: var(--ux-radius);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(15,23,42,0.72));
+  border: 1px solid rgba(56,189,248,0.22);
+  font-weight: 700;
+}
+
+.uxStage {
+  margin-top: 12px;
+}
+
+.uxTabPanel {
+  display: none;
+}
+
+.uxTabPanel.active {
+  display: block;
+}
+
+.uxTwoColumn {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+
+.uxCardLarge,
+.uxQuickPanel,
+.uxHiddenTools,
+.uxJoinCard,
+.uxAlibiCard,
+.uxActionHub,
+.uxInfoDrawer,
+.uxChatPanel {
+  background: linear-gradient(180deg, var(--ux-panel), rgba(15,23,42,0.62));
+  border: 1px solid var(--ux-line);
+  border-radius: var(--ux-radius);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+}
+
+.uxSectionTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.uxSectionTitle h2,
+.uxCardLarge h2,
+.uxActionHub h2,
+.uxAlibiCard h2 {
+  margin-top: 0;
+}
+
+.uxSectionTitle p {
+  color: var(--ux-muted);
+  margin: 0;
+}
+
+.uxEventGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.uxEventGrid button {
+  min-height: 50px;
+  text-align: left;
+  border-radius: 14px;
+}
+
+.uxEventGrid.bigButtons button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 86px;
+}
+
+.uxEventGrid.bigButtons span {
+  color: var(--ux-muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.uxActiveEvent {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(2,6,23,0.45);
+  border: 1px dashed rgba(148,163,184,0.2);
+}
+
+.uxQuickGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.uxQuickGrid > div {
+  min-height: 110px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(2,6,23,0.38);
+  border: 1px solid var(--ux-line);
+  overflow: auto;
+}
+
+.uxQuickGrid b {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.uxHiddenTools {
+  margin-top: 16px;
+}
+
+.uxShareGrid {
+  margin-top: 12px;
+}
+
+.uxShareGrid label div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.uxTheoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.uxChat {
+  min-height: 560px;
+}
+
+/* Player UX */
+.uxPlayerTop {
+  grid-template-columns: minmax(240px, 1fr) auto;
+}
+
+.uxJoinCard {
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.uxJoinCard small {
+  width: 100%;
+  color: var(--ux-muted);
+}
+
+.uxPlayerLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  align-items: start;
+}
+
+.uxPlayerCenter,
+.uxPlayerSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.uxPlayerChat {
+  min-height: 52vh;
+}
+
+.uxChatInput {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.uxChatInput input {
+  flex: 1;
+}
+
+.uxAlibiCard p {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(2,6,23,0.38);
+  border: 1px solid var(--ux-line);
+}
+
+.uxActionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.uxActionGrid .danger {
+  grid-column: 1 / -1;
+}
+
+.uxInfoDrawer details summary {
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+.uxInfoDrawer details summary::-webkit-details-marker {
+  display: none;
+}
+
+.uxInfoDrawer details summary::after {
+  content: "Open";
+  float: right;
+  color: var(--ux-accent);
+  font-size: 12px;
+}
+
+.uxInfoDrawer details[open] summary::after {
+  content: "Hide";
+}
+
+.uxDrawerContent {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ux-line);
+}
+
+.uxPlayerEvent {
+  border-radius: 18px;
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(15,23,42,0.88));
+  margin-bottom: 12px;
+  animation: none !important;
+}
+
+.uxPlayerEvent.urgent {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(15,23,42,0.88));
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.1), 0 18px 40px rgba(0,0,0,0.22);
+  animation: uxSoftPulse 1.4s ease-in-out infinite alternate !important;
+}
+
+@keyframes uxSoftPulse {
+  from { box-shadow: 0 0 0 1px rgba(239,68,68,0.08), 0 18px 40px rgba(0,0,0,0.22); }
+  to { box-shadow: 0 0 0 1px rgba(239,68,68,0.32), 0 0 30px rgba(239,68,68,0.14); }
+}
+
+/* Less noisy player cards */
+.compactPlayer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border-radius: 16px;
+}
+
+.cleanBtns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(70px, 1fr));
+  gap: 6px;
+}
+
+.moreControls {
+  grid-column: 1 / -1;
+  padding-top: 10px;
+  border-top: 1px solid var(--ux-line);
+}
+
+/* Make old clutter panels less loud if still present */
+.sharePanel,
+.commandCenter,
+.statusChips,
+.directorLayout,
+.playerGameLayout,
+.playerStatusStrip,
+.joinPanel,
+.playerHero {
+  max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .uxTopBar,
+  .uxPlayerTop,
+  .uxTwoColumn,
+  .uxPlayerLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .uxPrimaryControls {
+    justify-content: flex-start;
+  }
+
+  .uxQuickGrid,
+  .uxTheoryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .uxPlayerSidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 650px) {
+  .uxEventGrid,
+  .uxActionGrid,
+  .cleanBtns {
+    grid-template-columns: 1fr;
+  }
+
+  .uxTabs {
+    position: static;
+  }
+
+  .uxTimerCard b,
+  .uxPlayerTimer b {
+    font-size: 42px;
+  }
+}
+
+
+/* =========================
+   Phase 12E - Professional UI Finish
+   Cleaner spacing, hierarchy, and less visual noise
+   ========================= */
+
+:root {
+  --ux-bg: #070b14;
+  --ux-surface: rgba(15, 23, 42, 0.78);
+  --ux-surface-strong: rgba(15, 23, 42, 0.94);
+  --ux-line-soft: rgba(148, 163, 184, 0.13);
+  --ux-text-soft: #94a3b8;
+  --ux-text-bright: #f8fafc;
+  --ux-accent-soft: rgba(56, 189, 248, 0.12);
+}
+
+.uxBody {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.11), transparent 34%),
+    radial-gradient(circle at top right, rgba(168, 85, 247, 0.10), transparent 30%),
+    linear-gradient(180deg, #07111f 0%, #070b14 45%, #05070d 100%);
+}
+
+.uxTopBar {
+  align-items: center;
+  padding: 18px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, rgba(15,23,42,0.92), rgba(15,23,42,0.68));
+  border: 1px solid var(--ux-line-soft);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.24);
+  margin-bottom: 14px;
+}
+
+.uxBrand h1 {
+  margin: 2px 0 0;
+  letter-spacing: -0.035em;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 0.95;
+}
+
+.uxBrand .eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.10);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  margin: 0 0 8px;
+}
+
+.uxPrimaryControls {
+  background: rgba(2, 6, 23, 0.28);
+  border: 1px solid var(--ux-line-soft);
+  border-radius: 18px;
+  padding: 10px;
+}
+
+.uxPrimaryControls input {
+  min-height: 42px;
+  border-radius: 12px;
+}
+
+.uxPrimaryControls button,
+.uxEventGrid button,
+.uxActionGrid button,
+.cleanBtns button,
+.modalActions button,
+.uxShareGrid button {
+  border-radius: 12px;
+  min-height: 40px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.uxPrimaryControls button:hover,
+.uxEventGrid button:hover,
+.uxActionGrid button:hover,
+.cleanBtns button:hover,
+.modalActions button:hover,
+.uxShareGrid button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(125, 211, 252, 0.32);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+}
+
+.uxPrimaryControls button:active,
+.uxEventGrid button:active,
+.uxActionGrid button:active,
+.cleanBtns button:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+.uxTimerCard {
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(2,6,23,0.9), rgba(15,23,42,0.78));
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 45px rgba(0,0,0,0.24);
+}
+
+.uxTimerCard span {
+  color: var(--ux-text-soft);
+  letter-spacing: 0.16em;
+}
+
+.uxTimerCard b {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.055em;
+}
+
+.uxStatusRail {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.uxStatusRail div {
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid var(--ux-line-soft);
+  padding: 12px 14px;
+}
+
+.uxStatusRail span {
+  color: var(--ux-text-soft);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.uxStatusRail b {
+  color: var(--ux-text-bright);
+  font-size: 15px;
+}
+
+.uxTabs {
+  padding: 8px;
+  gap: 6px;
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.48);
+  border: 1px solid var(--ux-line-soft);
+  backdrop-filter: blur(12px);
+}
+
+.uxTabBtn {
+  border-radius: 12px;
+  color: #cbd5e1;
+  border: 1px solid transparent;
+}
+
+.uxTabBtn.active {
+  color: #f8fafc;
+  background: linear-gradient(135deg, rgba(56,189,248,0.20), rgba(99,102,241,0.18));
+  border-color: rgba(125, 211, 252, 0.22);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.10);
+}
+
+.uxIncident {
+  border-radius: 18px;
+  padding: 14px 18px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--ux-line-soft);
+  color: #dbeafe;
+}
+
+.panel,
+.uxCardLarge,
+.uxQuickPanel,
+.uxHiddenTools {
+  border-radius: 24px !important;
+  background: linear-gradient(180deg, rgba(15,23,42,0.80), rgba(15,23,42,0.62)) !important;
+  border: 1px solid var(--ux-line-soft) !important;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.18);
+}
+
+.uxSectionTitle {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ux-line-soft);
+}
+
+.uxSectionTitle h2,
+.panel h2 {
+  letter-spacing: -0.025em;
+}
+
+.uxSectionTitle p,
+.hint {
+  color: var(--ux-text-soft) !important;
+  line-height: 1.5;
+}
+
+.card,
+.compactCaseCard,
+.evidence,
+.compactPlayer,
+.theoryCol,
+.voteRow,
+.contradictionItem,
+.summaryBox,
+.revealRow {
+  border-radius: 18px !important;
+  border: 1px solid var(--ux-line-soft) !important;
+  background: rgba(2, 6, 23, 0.30) !important;
+}
+
+.uxQuickGrid > div {
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.28);
+  border: 1px solid var(--ux-line-soft);
+  padding: 14px;
+}
+
+.uxEventGrid button {
+  background: linear-gradient(135deg, rgba(56,189,248,0.13), rgba(99,102,241,0.10));
+  border: 1px solid rgba(125, 211, 252, 0.16);
+}
+
+.uxEventGrid.bigButtons button {
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px;
+}
+
+.uxEventGrid.bigButtons button span {
+  opacity: 0.68;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.compactPlayer {
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.playerMain > b {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.cleanBtns button {
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.cleanBtns .danger,
+button.danger {
+  background: linear-gradient(135deg, rgba(239,68,68,0.24), rgba(127,29,29,0.24)) !important;
+  border-color: rgba(248, 113, 113, 0.28) !important;
+}
+
+.uxHiddenTools {
+  opacity: 0.88;
+}
+
+.uxHiddenTools:hover {
+  opacity: 1;
+}
+
+.uxHiddenTools summary {
+  cursor: pointer;
+  color: #cbd5e1;
+}
+
+.uxShareGrid label {
+  border-radius: 16px;
+  border: 1px solid var(--ux-line-soft);
+  background: rgba(2,6,23,0.25);
+  padding: 12px;
+}
+
+.modal {
+  border-radius: 26px !important;
+  background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(2,6,23,0.96)) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 32px 90px rgba(0,0,0,0.45);
+}
+
+.closeBtn {
+  border-radius: 999px;
+}
+
+/* Player page professional cleanup */
+.uxPlayerTop,
+.uxPlayerSidebar,
+.uxPlayerMain .panel {
+  border-radius: 24px !important;
+  border: 1px solid var(--ux-line-soft) !important;
+  background: linear-gradient(180deg, rgba(15,23,42,0.80), rgba(15,23,42,0.62)) !important;
+}
+
+.uxRoleHero {
+  border-radius: 22px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(2,6,23,0.34));
+}
+
+.uxInfoDrawer {
+  border-radius: 18px;
+  border: 1px solid var(--ux-line-soft);
+  background: rgba(2,6,23,0.25);
+}
+
+/* Overlay: cleaner broadcast look */
+.broadcastOverlay {
+  border-radius: 26px;
+}
+
+.broadcastPanel,
+.broadcastCard,
+.broadcastCase {
+  border-radius: 18px !important;
+  border-color: rgba(148, 163, 184, 0.14) !important;
+}
+
+.broadcastFooter {
+  opacity: 0.72;
+}
+
+@media (max-width: 900px) {
+  .uxTopBar {
+    padding: 14px;
+  }
+
+  .uxPrimaryControls {
+    grid-template-columns: 1fr;
+  }
+}
