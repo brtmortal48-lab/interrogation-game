@@ -10,6 +10,8 @@
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 <button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
+<button class="feedbackTopBtn" onclick="openFeedback()">💡 Feedback</button>
+<button class="patchTopBtn" onclick="openPatchNotes()">📜 Patch Notes</button>
 
 <header class="uxTopBar">
   <div class="uxBrand">
@@ -314,6 +316,33 @@
     <div class="contactRow"><b>Developer</b><p>Zameerul Haq</p></div>
     <div class="contactRow"><b>Email</b><p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p></div>
     <div class="contactRow"><b>Country</b><p>Sri Lanka</p></div>
+  </div>
+</div>
+
+<div id="feedbackModal" class="modalOverlay" style="display:none;">
+  <div class="modal feedbackModal">
+    <button class="closeBtn" onclick="closeFeedback()">×</button>
+    <h2>Feedback & Ideas</h2>
+    <p class="hint">Send bugs, balance notes, UI problems, or feature ideas directly into the feedback log.</p>
+    <label>Category
+      <select id="feedbackType">
+        <option>General</option>
+        <option>Bug</option>
+        <option>Feature</option>
+        <option>UI</option>
+        <option>Balance</option>
+      </select>
+    </label>
+    <textarea id="feedbackMessage" placeholder="What should be improved?" maxlength="1000"></textarea>
+    <button onclick="submitFeedback()">Submit Feedback</button>
+  </div>
+</div>
+
+<div id="patchNotesModal" class="modalOverlay" style="display:none;">
+  <div class="modal patchNotesModal">
+    <button class="closeBtn" onclick="closePatchNotes()">×</button>
+    <h2>Patch Notes</h2>
+    <div id="patchNotesList"><p class="hint">Loading patch notes...</p></div>
   </div>
 </div>
 

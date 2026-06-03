@@ -81,6 +81,11 @@ socket.on("midEvidenceDrop", (e) => {
   document.getElementById("focus").innerText = "New Evidence";
 });
 
+socket.on("evidenceCorrupted", (e) => {
+  document.getElementById("twist").innerText = `🚨 Investigation Distortion: ${e.text}`;
+  document.getElementById("focus").innerText = "Distorted Evidence";
+});
+
 socket.on("spotlight", (data) => {
   document.getElementById("focus").innerText = `${data.playerName} Under Pressure`;
 });

@@ -14,6 +14,8 @@
     <a href="#how">How it works</a>
     <a href="#features">Features</a>
     <button onclick="createRoom()">Create Room</button>
+    <button onclick="openPatchNotes()">Patch Notes</button>
+    <button onclick="openFeedback()">Feedback</button>
   </nav>
 </header>
 
@@ -68,6 +70,8 @@
 
 <footer class="landingFooter">
   <button onclick="openContact()">Contact Developer</button>
+  <button onclick="openFeedback()">Feedback</button>
+  <button onclick="openPatchNotes()">What's New</button>
   <p>Created by Zameerul Haq • Sri Lanka</p>
 </footer>
 
@@ -78,6 +82,33 @@
     <div class="contactRow"><b>Developer</b><p>Zameerul Haq</p></div>
     <div class="contactRow"><b>Email</b><p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p></div>
     <div class="contactRow"><b>Country</b><p>Sri Lanka</p></div>
+  </div>
+</div>
+
+<div id="feedbackModal" class="modalOverlay" style="display:none;">
+  <div class="modal feedbackModal">
+    <button class="closeBtn" onclick="closeFeedback()">×</button>
+    <h2>Feedback & Ideas</h2>
+    <p class="hint">Help improve the game before launch.</p>
+    <label>Category
+      <select id="feedbackType">
+        <option>General</option>
+        <option>Bug</option>
+        <option>Feature</option>
+        <option>UI</option>
+        <option>Balance</option>
+      </select>
+    </label>
+    <textarea id="feedbackMessage" placeholder="What should be improved?" maxlength="1000"></textarea>
+    <button onclick="submitFeedback()">Submit Feedback</button>
+  </div>
+</div>
+
+<div id="patchNotesModal" class="modalOverlay" style="display:none;">
+  <div class="modal patchNotesModal">
+    <button class="closeBtn" onclick="closePatchNotes()">×</button>
+    <h2>Patch Notes</h2>
+    <div id="patchNotesList"><p class="hint">Loading patch notes...</p></div>
   </div>
 </div>
 
@@ -101,6 +132,31 @@ function openContact() {
 function closeContact() {
   document.getElementById('contactModal').style.display = 'none';
 }
+
+function openFeedback() { document.getElementById('feedbackModal').style.display = 'flex'; }
+function closeFeedback() { document.getElementById('feedbackModal').style.display = 'none'; }
+function submitFeedback() {
+  const type = document.getElementById('feedbackType').value;
+  const message = document.getElementById('feedbackMessage').value.trim();
+  if (!message) return alert('Write your feedback first.');
+  socket.emit('submitFeedback', { type, message, name: 'Landing Visitor', roomId: '' });
+}
+function openPatchNotes() {
+  document.getElementById('patchNotesModal').style.display = 'flex';
+  socket.emit('requestPatchNotes');
+}
+function closePatchNotes() { document.getElementById('patchNotesModal').style.display = 'none'; }
+socket.on('feedbackThanks', (data) => {
+  alert(data.message || 'Thanks for your feedback!');
+  document.getElementById('feedbackMessage').value = '';
+  closeFeedback();
+});
+socket.on('feedbackError', (message) => alert(message));
+socket.on('patchNotes', (notes) => {
+  document.getElementById('patchNotesList').innerHTML = (notes || []).map(note => `
+    <div class="patchNoteCard"><b>${note.version} — ${note.title}</b><ul>${(note.items || []).map(i => `<li>${i}</li>`).join('')}</ul></div>
+  `).join('');
+});
 </script>
 
 </body>

@@ -9,6 +9,7 @@
 <body class="playerBody uxBody">
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
+<button class="feedbackFloatingBtn" onclick="openFeedback()">💡 Feedback</button>
 
 <header class="uxPlayerTop proPlayerHero">
   <div>
@@ -186,6 +187,11 @@
               <button id="playerVoteBtn" style="display:none;" onclick="castEmergencyVote()">Cast Emergency Vote</button>
             </div>
             <p id="abilityStatus" class="hint">Ability: Available</p>
+            <div id="murdererToolsBox" class="murdererToolsBox" style="display:none;">
+              <h3>😈 Murderer Toolkit</h3>
+              <p class="hint">Each sabotage tool can be used once per round. These do not reveal your identity.</p>
+              <div id="murdererToolsGrid" class="murdererToolsGrid"></div>
+            </div>
           </div>
         </details>
       </section>
@@ -212,6 +218,25 @@
       <li><b>Lawyer:</b> Defend someone and reduce suspicion.</li>
       <li><b>Analyst:</b> Publish system-style analysis.</li>
     </ul>
+  </div>
+</div>
+
+<div id="feedbackModal" class="modalOverlay" style="display:none;">
+  <div class="modal feedbackModal">
+    <button class="closeBtn" onclick="closeFeedback()">×</button>
+    <h2>Feedback & Ideas</h2>
+    <p class="hint">Found a bug, balance issue, or idea? Send it to the developer.</p>
+    <label>Category
+      <select id="feedbackType">
+        <option>General</option>
+        <option>Bug</option>
+        <option>Feature</option>
+        <option>UI</option>
+        <option>Balance</option>
+      </select>
+    </label>
+    <textarea id="feedbackMessage" placeholder="What should be improved?" maxlength="1000"></textarea>
+    <button onclick="submitFeedback()">Submit Feedback</button>
   </div>
 </div>
 

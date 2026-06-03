@@ -7433,3 +7433,88 @@ button.danger {
 .directorCard, .directorItem {
   letter-spacing: 0.01em;
 }
+
+
+/* Phase 14C/14D: Murderer tools + feedback polish */
+.feedbackTopBtn,
+.patchTopBtn,
+.feedbackFloatingBtn {
+  position: fixed;
+  z-index: 50;
+  right: 16px;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+}
+.feedbackTopBtn { top: 64px; }
+.patchTopBtn { top: 112px; }
+.feedbackFloatingBtn { top: 64px; }
+.feedbackModal,
+.patchNotesModal {
+  max-width: 680px;
+  padding: 28px;
+}
+.feedbackModal label,
+.feedbackModal select,
+.feedbackModal textarea {
+  width: 100%;
+  display: block;
+}
+.feedbackModal textarea {
+  min-height: 150px;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 14px;
+  resize: vertical;
+}
+.patchNoteCard {
+  padding: 14px 16px;
+  margin: 12px 0;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+.patchNoteCard ul { margin: 10px 0 0 18px; }
+.murdererToolsBox {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(127,29,29,0.42), rgba(15,23,42,0.7));
+  border: 1px solid rgba(248,113,113,0.28);
+}
+.murdererToolsBox h3 { margin: 0 0 6px; }
+.murdererToolsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.sabotageToolBtn {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(248,113,113,0.25);
+  background: rgba(69,10,10,0.35);
+}
+.sabotageToolBtn b,
+.sabotageToolBtn span { display: block; }
+.sabotageToolBtn span {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.82;
+}
+.sabotageToolBtn.used {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (max-width: 700px) {
+  .feedbackTopBtn,
+  .patchTopBtn,
+  .feedbackFloatingBtn {
+    right: 10px;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+}

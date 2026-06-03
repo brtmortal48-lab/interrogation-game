@@ -15,8 +15,12 @@ const io = new Server(server);
 const rooms = {};
 const PROFILE_FILE = path.join(__dirname, "profiles.json");
 const HOST_PROFILE_FILE = path.join(__dirname, "host_profiles.json");
+const FEEDBACK_FILE = path.join(__dirname, "feedback.json");
+const ANALYTICS_FILE = path.join(__dirname, "analytics.json");
 const playerProfiles = loadProfiles();
 const hostProfiles = loadHostProfiles();
+const communityFeedback = loadJsonArray(FEEDBACK_FILE);
+const analytics = loadAnalytics();
 
 const DEFAULT_SETTINGS = {
   minPlayers: 2,
@@ -119,6 +123,38 @@ io.on("connection", (socket) => {
       profileCode: profile.id,
       profile: getProfileStats(profile.id)
     });
+  });
+
+  socket.on("submitFeedback", ({ type, message, name, roomId, profileCode }) => {
+    const cleanMessage = sanitizeLongText(message || "");
+    if (!cleanMessage) {
+      socket.emit("feedbackError", "Write a short message first.");
+      return;
+    }
+
+    const item = {
+      id: `FB-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      date: new Date().toISOString(),
+      type: sanitizeFeedbackType(type),
+      name: sanitizeName(name || "Anonymous"),
+      roomId: roomId ? String(roomId).trim().toUpperCase().slice(0, 12) : "",
+      profileCode: normalizeProfileCode(profileCode) || "",
+      message: cleanMessage
+    };
+
+    communityFeedback.unshift(item);
+    while (communityFeedback.length > 300) communityFeedback.pop();
+    saveJson(FEEDBACK_FILE, communityFeedback);
+
+    analytics.feedbackSubmitted = (analytics.feedbackSubmitted || 0) + 1;
+    analytics.lastFeedbackAt = item.date;
+    saveAnalytics();
+
+    socket.emit("feedbackThanks", { message: "Thanks — your feedback was saved." });
+  });
+
+  socket.on("requestPatchNotes", () => {
+    socket.emit("patchNotes", getPatchNotes());
   });
 
   socket.on("joinRoom", ({ roomId, role, name, hostKey, profileCode, hostProfileCode }) => {
@@ -425,6 +461,10 @@ io.on("connection", (socket) => {
     room.viewerVotes = {};
     room.playerVotes = {};
     room.activeStreamEvent = null;
+    room.murdererTools = {};
+    analytics.gamesStarted = (analytics.gamesStarted || 0) + 1;
+    analytics.lastGameStartedAt = new Date().toISOString();
+    saveAnalytics();
     room.midEvidenceDropped = false;
     room.spotlightPlayerId = null;
 
@@ -463,7 +503,8 @@ io.on("connection", (socket) => {
         canUseAnonymous: true,
         caseFile: room.caseFile,
         profileCode: p.profileId,
-        profileStats: getProfileStats(p.profileId || p.name)
+        profileStats: getProfileStats(p.profileId || p.name),
+        murdererTools: p.role === "Murderer" ? getMurdererTools(room) : []
       });
 
       io.to(p.id).emit("roundState", {
@@ -599,6 +640,20 @@ io.on("connection", (socket) => {
     triggerStreamEvent(roomId, room, type);
   });
 
+  socket.on("murdererTool", ({ roomId, type, targetId }) => {
+    roomId = String(roomId || "").trim().toUpperCase();
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const player = room.players.find((p) => p.id === socket.id);
+    if (!player || player.role !== "Murderer") {
+      socket.emit("systemMessage", "Only the murderer can use sabotage tools.");
+      return;
+    }
+
+    applyMurdererTool(roomId, room, player, type, targetId);
+  });
+
   socket.on("adjustSuspicion", ({ roomId, playerId, amount }) => {
     const room = rooms[roomId];
     if (!room || socket.id !== room.streamer) return;
@@ -660,6 +715,7 @@ io.on("connection", (socket) => {
     evaluateBonusObjectives(room, murderer, accused, success);
     updatePlayerProfiles(room, success);
     updateHostProfile(room, success);
+    recordGameAnalytics(room, success);
 
     const witnesses = room.players.filter((p) => p.role === "Witness");
     const escaped = !success && murderer ? murderer.name : null;
@@ -1019,6 +1075,8 @@ function createRoom(hostKey) {
     viewerVotes: {},
     playerVotes: {},
     activeStreamEvent: null,
+    murdererTools: {},
+    sabotageLog: [],
     directorHistory: [],
     caseIntensity: 0,
     statementHistory: [],
@@ -1173,6 +1231,116 @@ function useRoleAbility(roomId, room, player, target) {
     time: new Date().toLocaleTimeString()
   });
   io.to(player.id).emit("abilityUsed");
+}
+
+function getMurdererTools(room) {
+  const used = room.murdererTools || {};
+  return [
+    { type: "frame", label: "Frame Player", icon: "🎭", needsTarget: true, used: !!used.frame, description: "Add suspicion to another player and create a vague investigation distortion." },
+    { type: "corrupt", label: "Corrupt Evidence", icon: "🧩", needsTarget: false, used: !!used.corrupt, description: "Turn one board lead into corrupted evidence." },
+    { type: "falseLead", label: "False Lead", icon: "📨", needsTarget: false, used: !!used.falseLead, description: "Inject a misleading anonymous report." },
+    { type: "blur", label: "Blur Lead", icon: "🌫️", needsTarget: false, used: !!used.blur, description: "Make one investigation lead less clear." },
+    { type: "twistRelation", label: "Twist Relationship", icon: "🤝", needsTarget: true, used: !!used.twistRelation, description: "Make a player's relationship angle sound suspicious." }
+  ];
+}
+
+function applyMurdererTool(roomId, room, murderer, type, targetId) {
+  if (!room.murdererTools) room.murdererTools = {};
+  if (!room.sabotageLog) room.sabotageLog = [];
+
+  const tool = getMurdererTools(room).find((t) => t.type === type);
+  if (!tool) {
+    io.to(murderer.id).emit("systemMessage", "Unknown sabotage tool.");
+    return;
+  }
+
+  if (room.murdererTools[type]) {
+    io.to(murderer.id).emit("systemMessage", "You already used that sabotage tool this round.");
+    return;
+  }
+
+  const target = targetId ? room.players.find((p) => p.id === targetId) : null;
+  if (tool.needsTarget && !target) {
+    io.to(murderer.id).emit("systemMessage", "Choose a target first.");
+    return;
+  }
+
+  room.murdererTools[type] = true;
+  const log = {
+    type,
+    title: tool.label,
+    targetName: target ? target.name : "Investigation Board",
+    time: new Date().toLocaleTimeString()
+  };
+  room.sabotageLog.unshift(log);
+
+  if (type === "frame") {
+    target.suspicion = Math.min(100, (target.suspicion || 0) + 18);
+    emitInvestigationDistortion(roomId, "🎭 Investigation Distortion", `A vague lead suddenly makes ${target.name}'s alibi look worse.`);
+    io.to(roomId).emit("suspicionUpdate", {
+      players: publicPlayers(room.players),
+      detectiveDirector: generateDetectiveDirector(room),
+      caseIntensity: calculateCaseIntensity(room)
+    });
+  }
+
+  if (type === "corrupt") {
+    const evidence = random((room.evidence || []).filter((e) => e.reliability !== "Corrupted")) || (room.evidence || [])[0];
+    if (evidence) {
+      evidence.reliability = "Corrupted";
+      evidence.type = "Corrupted Lead";
+      evidence.text = `A recovered record is now unreadable. It supports theories, but cannot confirm who caused the incident.`;
+      io.to(roomId).emit("evidenceCorrupted", evidence);
+    }
+    emitInvestigationDistortion(roomId, "🧩 Corrupted Log", "A section of the investigation record became unreliable.");
+  }
+
+  if (type === "falseLead") {
+    io.to(roomId).emit("newMessage", {
+      playerId: "sabotageFalseLead",
+      name: "Anonymous Report",
+      message: generateFalseLead(room, murderer),
+      tag: "REPORT",
+      time: new Date().toLocaleTimeString()
+    });
+    emitInvestigationDistortion(roomId, "📨 Anonymous Report", "A new witness claim entered the room. Its reliability is unknown.");
+  }
+
+  if (type === "blur") {
+    const evidence = random(room.evidence || []);
+    if (evidence) {
+      evidence.reliability = "Questionable";
+      evidence.text = `The lead is too incomplete to identify anyone directly. Players must compare alibis instead.`;
+      io.to(roomId).emit("evidenceCorrupted", evidence);
+    }
+    emitInvestigationDistortion(roomId, "🌫️ Lead Blurred", "One clue became less clear. The room must rely on statements and contradictions.");
+  }
+
+  if (type === "twistRelation") {
+    target.relationship = `A new rumor suggests ${target.name}'s earlier connection may not be as innocent as it sounded.`;
+    target.interrogationAngle = `Ask ${target.name} why their relationship angle changed after pressure entered the room.`;
+    emitInvestigationDistortion(roomId, "🤝 Relationship Rumor", `${target.name}'s connection to the case now looks more suspicious.`);
+  }
+
+  analytics.sabotageUsed = (analytics.sabotageUsed || 0) + 1;
+  saveAnalytics();
+
+  io.to(murderer.id).emit("murdererToolUsed", { type, tools: getMurdererTools(room) });
+  io.to(roomId).emit("systemMessage", "🚨 Investigation distortion detected. Not all new information may be reliable.");
+  io.to(roomId).emit("soundCue", "twist");
+  emitDirectorUpdate(roomId);
+  emitRoomUpdate(roomId);
+}
+
+function emitInvestigationDistortion(roomId, title, message) {
+  const event = {
+    type: "sabotage",
+    icon: "🚨",
+    title,
+    message,
+    seconds: 12
+  };
+  io.to(roomId).emit("streamEvent", event);
 }
 
 function generateRoomCode() {
@@ -1387,7 +1555,15 @@ function assignAlibisRolesAndClues(room) {
     `Survive until reveal. Secret goal: redirect discussion away from your real location.`
   ]);
   murderer.abilityName = "Plant False Lead";
-  murderer.abilityDescription = "Once per round, inject a misleading anonymous lead into the investigation.";
+  murderer.abilityDescription = "Use your normal ability, then use your hidden sabotage toolkit carefully. Each sabotage tool can be used once per round.";
+  murderer.bonusObjective = random([
+    `Bonus: Make ${frameTarget.name} become Prime Suspect before reveal.`,
+    `Bonus: Cause two players to argue about their alibis.`,
+    `Bonus: Keep your suspicion below 50% until the final accusation.`,
+    `Bonus: Make the detective accuse an innocent player.`
+  ]);
+  murderer.bonusTargetId = frameTarget.id;
+  murderer.bonusTargetName = frameTarget.name;
   murderer.anonymousTip = generateAnonymousTip(room, murderer);
 
   const roleCycle = ["Witness", "Observer", "Drifter", "Guard", "Journalist", "Informant", "Lawyer", "Analyst"];
@@ -2263,6 +2439,16 @@ function generateDetectiveDirector(room) {
     });
   }
 
+  if ((room.sabotageLog || []).length) {
+    const lastSabotage = room.sabotageLog[0];
+    suggestions.push({
+      type: "danger",
+      title: "Information may be distorted",
+      text: `${lastSabotage.title} affected ${lastSabotage.targetName}.`,
+      action: "Ask players to explain, but do not fully trust the newest lead."
+    });
+  }
+
   if (!suggestions.length) {
     suggestions.push({
       type: "info",
@@ -2355,6 +2541,82 @@ function unique(arr) {
 function clamp(value, min, max) {
   if (Number.isNaN(value)) return min;
   return Math.max(min, Math.min(max, value));
+}
+
+
+function sanitizeFeedbackType(type) {
+  const allowed = ["Bug", "Feature", "UI", "Balance", "General"];
+  const clean = String(type || "General").trim();
+  return allowed.includes(clean) ? clean : "General";
+}
+
+function sanitizeLongText(message) {
+  if (!message || typeof message !== "string") return "";
+  return message.trim().slice(0, 1000);
+}
+
+function loadJsonArray(file) {
+  try {
+    if (!fs.existsSync(file)) return [];
+    const data = JSON.parse(fs.readFileSync(file, "utf8"));
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveJson(file, data) {
+  try {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error(`Failed to save ${file}:`, err.message);
+  }
+}
+
+function loadAnalytics() {
+  try {
+    if (!fs.existsSync(ANALYTICS_FILE)) {
+      return {
+        gamesStarted: 0,
+        gamesFinished: 0,
+        murdererWins: 0,
+        detectiveWins: 0,
+        sabotageUsed: 0,
+        feedbackSubmitted: 0,
+        totalPlayersAcrossGames: 0,
+        roleCounts: {},
+        abilityUse: {}
+      };
+    }
+    return JSON.parse(fs.readFileSync(ANALYTICS_FILE, "utf8"));
+  } catch {
+    return { gamesStarted: 0, gamesFinished: 0, murdererWins: 0, detectiveWins: 0, sabotageUsed: 0, feedbackSubmitted: 0, totalPlayersAcrossGames: 0, roleCounts: {}, abilityUse: {} };
+  }
+}
+
+function saveAnalytics() {
+  saveJson(ANALYTICS_FILE, analytics);
+}
+
+function recordGameAnalytics(room, detectiveSolved) {
+  analytics.gamesFinished = (analytics.gamesFinished || 0) + 1;
+  if (detectiveSolved) analytics.detectiveWins = (analytics.detectiveWins || 0) + 1;
+  else analytics.murdererWins = (analytics.murdererWins || 0) + 1;
+  analytics.totalPlayersAcrossGames = (analytics.totalPlayersAcrossGames || 0) + (room.players || []).length;
+  analytics.lastGameFinishedAt = new Date().toISOString();
+  analytics.roleCounts = analytics.roleCounts || {};
+  (room.players || []).forEach((p) => {
+    analytics.roleCounts[p.role] = (analytics.roleCounts[p.role] || 0) + 1;
+  });
+  saveAnalytics();
+}
+
+function getPatchNotes() {
+  return [
+    { version: "Pre-launch 14C", title: "Advanced Murderer Tools", items: ["Frame Player", "Corrupt Evidence", "Anonymous False Lead", "Blur Lead", "Relationship Rumor"] },
+    { version: "Pre-launch 14D", title: "Community Feedback", items: ["Feedback center", "Bug reports", "Feature suggestions", "Patch notes", "Lightweight launch analytics"] },
+    { version: "Pre-launch 14B", title: "Evidence Overhaul", items: ["Relationship reasons", "Motives", "Evidence fragments", "Better Director prompts"] }
+  ];
 }
 
 const PORT = process.env.PORT || process.env.HOSTINGER_PORT || 3000;

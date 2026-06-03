@@ -105,6 +105,45 @@ function useAbility() {
   action("ability");
 }
 
+function useMurdererTool(type, needsTarget = false) {
+  if (currentRole !== "Murderer") return alert("Only the murderer can use sabotage tools.");
+
+  let targetId = null;
+  if (needsTarget) {
+    if (!players.length) return alert("No players yet.");
+    const validTargets = players.filter((p) => p.name !== name);
+    const names = validTargets.map((p, i) => `${i + 1}. ${p.name}`).join("
+");
+    const choice = prompt(`Choose sabotage target:
+${names}`);
+    const index = Number(choice) - 1;
+    if (!validTargets[index]) return;
+    targetId = validTargets[index].id;
+  }
+
+  socket.emit("murdererTool", { roomId, type, targetId });
+}
+
+function renderMurdererTools(tools = []) {
+  const box = document.getElementById("murdererToolsBox");
+  const grid = document.getElementById("murdererToolsGrid");
+  if (!box || !grid) return;
+
+  if (currentRole !== "Murderer") {
+    box.style.display = "none";
+    grid.innerHTML = "";
+    return;
+  }
+
+  box.style.display = "block";
+  grid.innerHTML = tools.map((tool) => `
+    <button class="sabotageToolBtn ${tool.used ? "used" : ""}" ${tool.used ? "disabled" : ""} onclick="useMurdererTool('${tool.type}', ${tool.needsTarget ? "true" : "false"})">
+      <b>${escapeHtml(tool.icon)} ${escapeHtml(tool.label)}</b>
+      <span>${escapeHtml(tool.used ? "Used" : tool.description)}</span>
+    </button>
+  `).join("");
+}
+
 function castEmergencyVote() {
   if (!players.length) return alert("No players yet.");
 
@@ -159,6 +198,7 @@ socket.on("roundStarted", (data) => {
   }
 
   document.getElementById("abilityStatus").innerText = "Ability: Available";
+  renderMurdererTools([]);
   const streamBox = document.getElementById("streamEventBox");
   if (streamBox) {
     streamBox.style.display = "none";
@@ -208,6 +248,7 @@ socket.on("privateData", (data) => {
   }
 
   renderCaseFile(data.caseFile);
+  renderMurdererTools(data.murdererTools || []);
 });
 
 
@@ -251,6 +292,11 @@ socket.on("abilityUsed", () => {
 
   document.getElementById("abilityStatus").innerText = "Ability: Used";
   addSystemMessage("Your special ability was used.");
+});
+
+socket.on("murdererToolUsed", (data) => {
+  renderMurdererTools(data.tools || []);
+  addSystemMessage("Sabotage tool used. Stay calm and keep your cover.");
 });
 
 socket.on("revealTokenUsed", () => {
@@ -467,6 +513,32 @@ function setTextIfExists(id, value) {
   const el = document.getElementById(id);
   if (el) el.innerText = value;
 }
+
+function openFeedback() {
+  const modal = document.getElementById("feedbackModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeFeedback() {
+  const modal = document.getElementById("feedbackModal");
+  if (modal) modal.style.display = "none";
+}
+
+function submitFeedback() {
+  const type = document.getElementById("feedbackType")?.value || "General";
+  const message = document.getElementById("feedbackMessage")?.value.trim() || "";
+  if (!message) return alert("Write your feedback first.");
+  socket.emit("submitFeedback", { type, message, name: name || document.getElementById("name")?.value || "Player", roomId, profileCode: currentProfileCode });
+}
+
+socket.on("feedbackThanks", (data) => {
+  alert(data.message || "Thanks for the feedback!");
+  const msg = document.getElementById("feedbackMessage");
+  if (msg) msg.value = "";
+  closeFeedback();
+});
+
+socket.on("feedbackError", (message) => alert(message));
 
 function openHowTo() {
   document.getElementById("howToModal").style.display = "flex";

@@ -554,6 +554,11 @@ socket.on("midEvidenceDrop", (e) => {
   addSystemMessage("🚨 NEW LEAD: Re-check the alibis.");
 });
 
+socket.on("evidenceCorrupted", (e) => {
+  appendEvidence(e, true);
+  addSystemMessage("🚨 Investigation distortion: one lead is now unreliable.");
+});
+
 socket.on("suspicionUpdate", (data) => {
   players = data.players || [];
   if (data.hostProfileStats) renderHostProfile(data.hostProfileStats);
@@ -970,6 +975,54 @@ function playSound(type) {
   osc.start();
   osc.stop(ctx.currentTime + 0.16);
 }
+
+function openFeedback() {
+  const modal = document.getElementById("feedbackModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeFeedback() {
+  const modal = document.getElementById("feedbackModal");
+  if (modal) modal.style.display = "none";
+}
+
+function submitFeedback() {
+  const type = document.getElementById("feedbackType")?.value || "General";
+  const message = document.getElementById("feedbackMessage")?.value.trim() || "";
+  if (!message) return alert("Write your feedback first.");
+  socket.emit("submitFeedback", { type, message, name: document.getElementById("streamerName")?.value || "Streamer", roomId, profileCode: currentHostProfileCode });
+}
+
+function openPatchNotes() {
+  const modal = document.getElementById("patchNotesModal");
+  if (modal) modal.style.display = "flex";
+  socket.emit("requestPatchNotes");
+}
+
+function closePatchNotes() {
+  const modal = document.getElementById("patchNotesModal");
+  if (modal) modal.style.display = "none";
+}
+
+socket.on("feedbackThanks", (data) => {
+  alert(data.message || "Thanks for the feedback!");
+  const msg = document.getElementById("feedbackMessage");
+  if (msg) msg.value = "";
+  closeFeedback();
+});
+
+socket.on("feedbackError", (message) => alert(message));
+
+socket.on("patchNotes", (notes) => {
+  const box = document.getElementById("patchNotesList");
+  if (!box) return;
+  box.innerHTML = (notes || []).map((note) => `
+    <div class="patchNoteCard">
+      <b>${escapeHtml(note.version)} — ${escapeHtml(note.title)}</b>
+      <ul>${(note.items || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    </div>
+  `).join("");
+});
 
 function openHowTo() {
   document.getElementById("howToModal").style.display = "flex";
