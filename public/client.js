@@ -218,6 +218,7 @@ socket.on("streamEvent", (event) => {
   if (box) {
     box.style.display = "block";
     box.dataset.eventType = event.type || "";
+    box.classList.toggle("urgent", event.type === "forceAlibis" || event.type === "emergencyVote");
     box.innerHTML = `
       <b>${escapeHtml(event.icon || "🎬")} ${escapeHtml(event.title || "Stream Event")}</b>
       <p>${escapeHtml(event.message || "")}</p>
@@ -318,11 +319,15 @@ function clearStreamEventPrompt(type = null) {
   if (!box) return;
 
   const activeType = box.dataset.eventType || "";
-  if (type && activeType && activeType !== type) return;
+
+  // Force Alibis should clear immediately after the player states alibi or sends a response.
+  // This prevents the red blinking prompt from staying on screen.
+  if (type && activeType && activeType !== type && type !== "forceAlibis") return;
 
   box.style.display = "none";
   box.innerHTML = "";
   box.dataset.eventType = "";
+  box.classList.remove("active", "urgent", "blink", "forceAlibisActive");
 
   if (type === "forceAlibis") {
     hidePressure();

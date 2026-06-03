@@ -6,125 +6,120 @@
   <title>The Interrogation - Player</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="playerBody">
+<body class="playerBody uxBody">
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 
-<header class="playerHero">
+<header class="uxPlayerTop">
   <div>
     <p class="eyebrow">PLAYER CONSOLE</p>
     <h1>👤 The Interrogation</h1>
-    <p class="heroHint">Defend your alibi. Use your role. Watch for contradictions.</p>
+    <p class="heroHint">Talk. Defend. Accuse. Survive the case.</p>
   </div>
-
-  <div class="playerTimerCard">
-    <span>Timer</span>
-    <b id="timer">--</b>
-  </div>
+  <div class="uxPlayerTimer"><span>TIME</span><b id="timer">--</b></div>
 </header>
 
-<section class="panel joinPanel">
-  <div class="joinGrid">
-    <input id="name" placeholder="Your name">
-    <input id="room" placeholder="Room ID">
-    <button onclick="join()">Join Game</button>
-  </div>
-  <div id="joinHint" class="inviteBox">Enter your name and join the room.</div>
+<section class="panel uxJoinCard">
+  <input id="name" placeholder="Your name">
+  <input id="room" placeholder="Room ID">
+  <button onclick="join()">Join Game</button>
+  <small id="joinHint">Enter your name and join the room.</small>
 </section>
 
 <div id="game" style="display:none;">
-  <section class="playerStatusStrip">
+  <section class="uxPlayerStatus">
     <span>Room <b id="roomLabel">--</b></span>
     <span>Round <b id="roundNumber">0</b></span>
     <span>Status <b id="status">Waiting</b></span>
   </section>
 
-  <div id="streamEventBox" class="streamEventBox" style="display:none;"></div>
+  <div id="streamEventBox" class="streamEventBox uxPlayerEvent" style="display:none;"></div>
   <div id="pressureBox" class="pressureBox" style="display:none;"></div>
 
-  <main class="playerGameLayout">
-    <section class="playerMainColumn">
-      <section class="panel caseFocusPanel">
-        <h2>📁 Case File</h2>
-        <div id="caseFile" class="card compactCaseCard">
+  <main class="uxPlayerLayout">
+    <section class="uxPlayerCenter">
+      <section class="panel uxCardLarge">
+        <h2>📁 Case</h2>
+        <div id="caseFile" class="card uxCompactCase">
           <p>Waiting for case...</p>
         </div>
       </section>
 
-      <section class="panel chatFocusPanel">
-        <div class="sectionHeaderRow">
+      <section class="panel uxChatPanel">
+        <div class="uxSectionTitle">
           <h2>💬 Interrogation Chat</h2>
-          <p class="hint">Press Enter to send.</p>
+          <p>Most of the game happens here.</p>
         </div>
-        <div id="chat" class="chat playerChat"></div>
-
-        <div class="chatInput playerChatInput">
-          <input id="msg" placeholder="Defend, accuse, explain, or question..." maxlength="180">
+        <div id="chat" class="chat playerChat uxPlayerChat"></div>
+        <div class="chatInput playerChatInput uxChatInput">
+          <input id="msg" placeholder="Explain, accuse, defend, or question..." maxlength="180">
           <button onclick="send()">Send</button>
         </div>
       </section>
     </section>
 
-    <aside class="playerSideColumn">
-      <section class="panel alibiCardPanel priorityPanel">
-        <h2>🧭 Public Alibi</h2>
-        <div class="card">
-          <p id="publicAlibi">Waiting for round...</p>
-          <button class="fullBtn" onclick="action('alibi')">State My Alibi</button>
-        </div>
+    <aside class="uxPlayerSidebar">
+      <section class="panel uxAlibiCard">
+        <h2>🧭 My Alibi</h2>
+        <p id="publicAlibi">Waiting for round...</p>
+        <button class="fullBtn" onclick="action('alibi')">State My Alibi</button>
       </section>
 
-      <section class="panel roleCardPanel">
-        <h2>🎭 Role & Goal</h2>
-        <div class="card roleCard">
-          <p class="roleName"><b id="role">Waiting...</b></p>
-          <p><b>Observation Quality:</b> <span id="confidence">--</span></p>
-          <p id="objective"></p>
-        </div>
-      </section>
-
-      <section class="panel privateIntelPanel">
-        <h2>💡 Private Intel</h2>
-        <div class="card">
-          <p id="clue">Waiting for round...</p>
-
-          <div id="hiddenTruthBox" class="hiddenTruthBox" style="display:none;">
-            <p><b>Hidden Truth:</b></p>
-            <p id="hiddenTruth"></p>
-          </div>
-
-          <details class="revealDetails">
-            <summary>Anonymous reveal version</summary>
-            <p id="revealClue">Waiting for round...</p>
-          </details>
-
-          <p id="token" class="tokenText">Reveal Token: Available</p>
-        </div>
-      </section>
-
-      <section class="panel abilityPanel priorityPanel">
-        <h2>⚡ Abilities</h2>
-        <div class="card">
-          <p><b id="abilityName">Special Ability</b></p>
-          <p id="abilityDescription">Your ability will appear when the round starts.</p>
-          <div class="stackedButtons">
-            <button id="abilityBtn" onclick="useAbility()">Use Special Ability</button>
-            <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
-            <button id="playerVoteBtn" style="display:none;" onclick="castEmergencyVote()">Cast Emergency Vote</button>
-          </div>
-          <p id="abilityStatus" class="hint">Ability: Available</p>
-        </div>
-      </section>
-
-      <section class="panel quickActionsPanel">
-        <h2>🎯 Quick Actions</h2>
-        <div class="actions actionGrid">
+      <section class="panel uxActionHub">
+        <h2>🎮 Actions</h2>
+        <div class="uxActionGrid">
           <button onclick="action('claim')">Ask Me</button>
           <button onclick="action('defend')">Defend</button>
           <button onclick="chooseTarget('doubt')">Doubt</button>
           <button onclick="chooseTarget('accuse')">Accuse</button>
-          <button id="revealBtn" class="danger wideAction" onclick="action('reveal')">Reveal Observation</button>
+          <button id="revealBtn" class="danger" onclick="action('reveal')">Reveal</button>
         </div>
+      </section>
+
+      <section class="panel uxInfoDrawer">
+        <details open>
+          <summary>🎭 Role & Goal</summary>
+          <div class="uxDrawerContent">
+            <p class="roleName"><b id="role">Waiting...</b></p>
+            <p><b>Observation:</b> <span id="confidence">--</span></p>
+            <p id="objective"></p>
+            <p><b>Bonus:</b> <span id="bonusObjective">No bonus objective yet.</span></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel uxInfoDrawer">
+        <details>
+          <summary>💡 Private Intel</summary>
+          <div class="uxDrawerContent">
+            <p id="clue">Waiting for round...</p>
+            <div id="hiddenTruthBox" class="hiddenTruthBox" style="display:none;">
+              <p><b>Hidden Truth:</b></p>
+              <p id="hiddenTruth"></p>
+            </div>
+            <details class="revealDetails">
+              <summary>Anonymous reveal version</summary>
+              <p id="revealClue">Waiting for round...</p>
+            </details>
+            <p id="token" class="tokenText">Reveal Token: Available</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel uxInfoDrawer">
+        <details>
+          <summary>⚡ Abilities</summary>
+          <div class="uxDrawerContent">
+            <p><b id="abilityName">Special Ability</b></p>
+            <p id="abilityDescription">Your ability will appear when the round starts.</p>
+            <div class="stackedButtons">
+              <button id="abilityBtn" onclick="useAbility()">Use Special Ability</button>
+              <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
+              <button id="playerVoteBtn" style="display:none;" onclick="castEmergencyVote()">Cast Emergency Vote</button>
+            </div>
+            <p id="abilityStatus" class="hint">Ability: Available</p>
+          </div>
+        </details>
       </section>
     </aside>
   </main>
@@ -134,10 +129,8 @@
   <div class="modal">
     <button class="closeBtn" onclick="closeHowTo()">×</button>
     <h2>Player Guide</h2>
-
-    <h3>Core Idea</h3>
-    <p>Everyone has a public alibi. The detective will question where you were, what you saw, and whether your story matches others.</p>
-
+    <h3>What to do</h3>
+    <p>Keep talking. Defend your public alibi, compare stories, use your ability, and expose contradictions.</p>
     <h3>Roles</h3>
     <ul>
       <li><b>Murderer:</b> Hide your real location and plant a false lead.</li>
@@ -151,12 +144,6 @@
       <li><b>Lawyer:</b> Defend someone and reduce suspicion.</li>
       <li><b>Analyst:</b> Publish system-style analysis.</li>
     </ul>
-
-    <h3>Anonymous Reveal</h3>
-    <p>Your reveal does not show your name. It adds an anonymous observation to the chat.</p>
-
-    <h3>Stream Events</h3>
-    <p>If a stream event appears, respond fast. Force Alibis clears after you state your alibi or send a response.</p>
   </div>
 </div>
 

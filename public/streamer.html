@@ -6,39 +6,34 @@
   <title>The Interrogation - Streamer</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="streamerBody">
+<body class="streamerBody uxBody">
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 <button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
 
-<header class="streamerHero polishedHero">
-  <div>
+<header class="uxTopBar">
+  <div class="uxBrand">
     <p class="eyebrow">LIVE DETECTIVE ROOM</p>
     <h1>🎥 The Interrogation</h1>
     <p class="creatorSmall">Created by Zameerul Haq • Sri Lanka</p>
   </div>
 
-  <div class="bigTimerBox commandTimer">
-    <span>TIME REMAINING</span>
+  <div class="uxTimerCard">
+    <span>TIME</span>
     <b id="timer">--</b>
   </div>
-</header>
 
-<section class="panel commandCenter">
-  <div class="commandInputs">
+  <div class="uxPrimaryControls">
     <input id="streamerName" placeholder="Streamer name">
     <input id="room" placeholder="Room ID">
     <button onclick="join()">Join</button>
+    <button id="startBtn" onclick="startRound()">▶ Start</button>
+    <button class="danger" onclick="reveal()">Reveal</button>
+    <button onclick="openSettings()">⚙</button>
   </div>
+</header>
 
-  <div class="commandButtons">
-    <button id="startBtn" onclick="startRound()">▶ Start Round</button>
-    <button class="danger" onclick="reveal()">⛔ Reveal Case</button>
-    <button onclick="openSettings()">⚙ Settings</button>
-  </div>
-</section>
-
-<section class="statusChips">
+<section class="uxStatusRail">
   <div><span>Room</span><b id="roomLabel">--</b></div>
   <div><span>Detective</span><b id="detectiveLabel">--</b></div>
   <div><span>Players</span><b id="playerCount">0 / 10</b></div>
@@ -47,120 +42,140 @@
   <div><span>Spotlight</span><b id="spotlight">None</b></div>
 </section>
 
-<section class="panel sharePanel">
-  <details>
-    <summary>🔗 Invite & Overlay Links</summary>
-    <div class="shareGrid">
-      <label>Player Invite
-        <div><input id="inviteLink" readonly><button onclick="copyInvite()">Copy</button></div>
-      </label>
-      <label>OBS Overlay
-        <div><input id="overlayLink" readonly><button onclick="copyOverlay()">Copy</button></div>
-      </label>
-      <label>Viewer Vote
-        <div><input id="voteLink" readonly><button onclick="copyVote()">Copy</button></div>
-      </label>
+<nav class="uxTabs">
+  <button class="uxTabBtn active" data-view="overview" onclick="switchStreamerView('overview')">Overview</button>
+  <button class="uxTabBtn" data-view="players" onclick="switchStreamerView('players')">Players</button>
+  <button class="uxTabBtn" data-view="events" onclick="switchStreamerView('events')">Events</button>
+  <button class="uxTabBtn" data-view="board" onclick="switchStreamerView('board')">Board</button>
+  <button class="uxTabBtn" data-view="chat" onclick="switchStreamerView('chat')">Chat</button>
+  <button class="uxTabBtn" data-view="results" onclick="switchStreamerView('results')">Results</button>
+</nav>
+
+<div id="incident" class="uxIncident">Waiting for case...</div>
+
+<main class="uxStage">
+  <section class="uxTabPanel active" data-view="overview">
+    <div class="uxTwoColumn">
+      <section class="panel uxCardLarge">
+        <div class="uxSectionTitle">
+          <h2>📁 Case File</h2>
+          <p>Read this first, then question alibis.</p>
+        </div>
+        <div id="caseFile" class="card compactCaseCard">
+          <p>Start a round to generate a case.</p>
+        </div>
+      </section>
+
+      <section class="panel uxCardLarge">
+        <div class="uxSectionTitle">
+          <h2>🎬 Stream Events</h2>
+          <p>Use one when the room becomes quiet.</p>
+        </div>
+        <div class="uxEventGrid">
+          <button onclick="triggerStreamEvent('forceAlibis')">📢 Force Alibis</button>
+          <button onclick="triggerStreamEvent('randomSpotlight')">🎯 Random Spotlight</button>
+          <button onclick="triggerStreamEvent('emergencyVote')">🗳 Emergency Vote</button>
+          <button onclick="triggerStreamEvent('newLead')">🔎 New Lead</button>
+        </div>
+        <div id="activeStreamEvent" class="uxActiveEvent">No active stream event.</div>
+      </section>
     </div>
-  </details>
-</section>
 
-<section class="panel lockPanel compactLockPanel">
-  <span>Room Lock: <b id="lockState">Locked</b></span>
-  <button onclick="toggleRoomLock()">Toggle Lock</button>
-  <small>Keep locked so nobody else can steal streamer control.</small>
-</section>
-
-<div id="incident" class="incident polishedIncident">Waiting for case...</div>
-
-<main class="directorLayout">
-  <section class="directorLeft">
-    <section class="panel casePanel priorityPanel">
-      <h2>📁 Case File</h2>
-      <div id="caseFile" class="card compactCaseCard">
-        <p>Start a round to generate a case.</p>
+    <section class="panel uxQuickPanel">
+      <h2>Quick Read</h2>
+      <div class="uxQuickGrid">
+        <div><b>Players</b><span id="lobbyList">No players yet.</span></div>
+        <div><b>Viewer Vote</b><span id="viewerVotes" class="voteBoard"><span class="hint">No votes yet.</span></span></div>
+        <div><b>Contradictions</b><span id="contradictions"><span class="hint">None yet.</span></span></div>
       </div>
-    </section>
-
-    <section class="panel">
-      <div class="sectionHeaderRow">
-        <h2>🧾 Investigation Board</h2>
-        <p class="hint">Facts create questions, not answers.</p>
-      </div>
-      <div id="evidence" class="evidenceGrid"></div>
-    </section>
-
-    <section id="lobbyPlayers" class="panel compactLobbyPanel">
-      <h2>Lobby Players</h2>
-      <div id="lobbyList">No players yet.</div>
     </section>
   </section>
 
-  <section class="directorCenter">
-    <section class="panel suspectsPanel priorityPanel">
-      <div class="sectionHeaderRow">
+  <section class="uxTabPanel" data-view="players">
+    <section class="panel uxCardLarge">
+      <div class="uxSectionTitle">
         <h2>👥 Suspects & Alibis</h2>
-        <p class="hint">Question alibis first, then compare contradictions.</p>
+        <p>Question one player at a time. Keep the board simple.</p>
       </div>
       <div id="players"></div>
     </section>
+  </section>
 
-    <section class="panel">
+  <section class="uxTabPanel" data-view="events">
+    <div class="uxTwoColumn">
+      <section class="panel uxCardLarge">
+        <h2>🎬 Stream Events</h2>
+        <p class="hint">These are your pacing tools. Use them only when needed.</p>
+        <div class="uxEventGrid bigButtons">
+          <button onclick="triggerStreamEvent('forceAlibis')"><b>📢 Force Alibis</b><span>Everyone must explain where they were.</span></button>
+          <button onclick="triggerStreamEvent('randomSpotlight')"><b>🎯 Random Spotlight</b><span>System chooses a player to defend.</span></button>
+          <button onclick="triggerStreamEvent('emergencyVote')"><b>🗳 Emergency Vote</b><span>Viewers and players vote immediately.</span></button>
+          <button onclick="triggerStreamEvent('newLead')"><b>🔎 New Lead</b><span>Add a clue without naming anyone.</span></button>
+        </div>
+      </section>
+
+      <section class="panel uxCardLarge">
+        <h2>❓ Question Prompts</h2>
+        <div id="questions">
+          <p class="hint">Questions appear when the round starts.</p>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="uxTabPanel" data-view="board">
+    <div class="uxTwoColumn">
+      <section class="panel uxCardLarge">
+        <div class="uxSectionTitle">
+          <h2>🧾 Investigation Board</h2>
+          <p>Facts create questions, not answers.</p>
+        </div>
+        <div id="evidence" class="evidenceGrid"></div>
+      </section>
+
+      <section class="panel uxCardLarge theoryPanel">
+        <h2>🧠 Theory Board</h2>
+        <div class="theoryStack uxTheoryGrid">
+          <div class="theoryCol trusted"><h3>Trusted</h3><div id="trustedBoard"></div></div>
+          <div class="theoryCol interest"><h3>Persons of Interest</h3><div id="interestBoard"></div></div>
+          <div class="theoryCol major"><h3>Major Suspects</h3><div id="majorBoard"></div></div>
+          <div class="theoryCol prime"><h3>Prime Suspect</h3><div id="primeBoard"></div></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="uxTabPanel" data-view="chat">
+    <section class="panel uxCardLarge">
       <h2>💬 Live Statements</h2>
-      <div id="chat" class="chat sideChat directorChat"></div>
+      <div id="chat" class="chat sideChat uxChat"></div>
     </section>
   </section>
 
-  <aside class="directorRight">
-    <section class="panel streamEventsPanel priorityPanel">
-      <h2>🎬 Stream Events</h2>
-      <p class="hint">Use these when the room slows down.</p>
-      <div class="streamEventButtons eventButtonGrid">
-        <button onclick="triggerStreamEvent('forceAlibis')">📢 Force Alibis</button>
-        <button onclick="triggerStreamEvent('randomSpotlight')">🎯 Random Spotlight</button>
-        <button onclick="triggerStreamEvent('emergencyVote')">🗳 Emergency Vote</button>
-        <button onclick="triggerStreamEvent('newLead')">🔎 New Lead</button>
-      </div>
-      <div id="activeStreamEvent" class="activeStreamEvent hint">No active stream event.</div>
+  <section class="uxTabPanel" data-view="results">
+    <section class="panel uxCardLarge">
+      <h2>🏁 Case Result</h2>
+      <div id="result" class="result"><p class="hint">Reveal the case to show the cinematic result here.</p></div>
     </section>
-
-    <section class="panel">
-      <h2>❓ Question Prompts</h2>
-      <div id="questions">
-        <p class="hint">Questions appear when the round starts.</p>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>🚨 Contradictions</h2>
-      <div id="contradictions">
-        <p class="hint">Contradictions appear here.</p>
-      </div>
-    </section>
-
-    <section class="panel theoryPanel">
-      <h2>🧠 Theory Board</h2>
-      <div class="theoryStack">
-        <div class="theoryCol trusted"><h3>Trusted</h3><div id="trustedBoard"></div></div>
-        <div class="theoryCol interest"><h3>Persons of Interest</h3><div id="interestBoard"></div></div>
-        <div class="theoryCol major"><h3>Major Suspects</h3><div id="majorBoard"></div></div>
-        <div class="theoryCol prime"><h3>Prime Suspect</h3><div id="primeBoard"></div></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>📊 Viewer Vote</h2>
-      <div id="viewerVotes" class="voteBoard"><p class="hint">Votes appear after viewers vote.</p></div>
-    </section>
-  </aside>
+  </section>
 </main>
 
-<div id="result" class="result"></div>
+<section class="panel uxHiddenTools">
+  <details>
+    <summary>🔗 Invite Links & Room Lock</summary>
+    <div class="shareGrid uxShareGrid">
+      <label>Player Invite <div><input id="inviteLink" readonly><button onclick="copyInvite()">Copy</button></div></label>
+      <label>OBS Overlay <div><input id="overlayLink" readonly><button onclick="copyOverlay()">Copy</button></div></label>
+      <label>Viewer Vote <div><input id="voteLink" readonly><button onclick="copyVote()">Copy</button></div></label>
+      <label>Room Lock <div><b id="lockState">Locked</b><button onclick="toggleRoomLock()">Toggle</button></div></label>
+    </div>
+  </details>
+</section>
 
 <div id="settingsModal" class="modalOverlay" style="display:none;">
   <div class="modal settingsModal">
     <button class="closeBtn" onclick="closeSettings()">×</button>
     <h2>Game Settings</h2>
-
     <div class="settingsGrid">
       <label>Min Players <input id="minPlayers" type="number" min="2" max="30" value="2"></label>
       <label>Max Players <input id="maxPlayers" type="number" min="2" max="50" value="10"></label>
@@ -184,13 +199,11 @@
       </label>
       <label>Music Volume <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)"></label>
     </div>
-
     <div class="modalActions">
       <button onclick="saveSettings()">Save Settings</button>
       <button onclick="toggleSound()">SFX: <span id="soundState">On</span></button>
       <button onclick="toggleMusic()">Music: <span id="musicState">Off</span></button>
     </div>
-
     <p class="hint">Set Round Time to 0 for unlimited Story Mode.</p>
   </div>
 </div>
@@ -200,11 +213,11 @@
     <button class="closeBtn" onclick="closeHowTo()">×</button>
     <h2>Streamer Guide</h2>
     <ol>
-      <li>Read the case file.</li>
-      <li>Ask each player where they were at the case time.</li>
-      <li>Use Stream Events when the room goes quiet.</li>
-      <li>Track contradictions and viewer votes.</li>
-      <li>Accuse one player and reveal the case summary.</li>
+      <li>Start at Overview and read the case.</li>
+      <li>Go to Players and question alibis one by one.</li>
+      <li>Use Events only when the room slows down.</li>
+      <li>Use Board to organize suspects.</li>
+      <li>Reveal when ready.</li>
     </ol>
   </div>
 </div>

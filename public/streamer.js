@@ -34,8 +34,28 @@ window.onload = () => {
     document.getElementById("streamerName").value = savedName;
   }
 
+  restoreStreamerView();
+
   if (roomFromUrl) join();
 };
+
+
+function switchStreamerView(view) {
+  document.querySelectorAll('.uxTabPanel').forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.view === view);
+  });
+
+  document.querySelectorAll('.uxTabBtn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+
+  localStorage.setItem('interrogationStreamerView', view);
+}
+
+function restoreStreamerView() {
+  const saved = localStorage.getItem('interrogationStreamerView') || 'overview';
+  switchStreamerView(saved);
+}
 
 function join() {
   roomId = document.getElementById("room").value.trim().toUpperCase();
