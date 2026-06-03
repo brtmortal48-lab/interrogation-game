@@ -29,6 +29,7 @@ socket.on("roomUpdate", (data) => {
   document.getElementById("playerCount").innerText = players.length;
 
   renderSusBoard();
+  renderVoteBoard(data.viewerVotes || []);
 });
 
 socket.on("roundStarted", (data) => {
@@ -45,11 +46,16 @@ socket.on("roundStarted", (data) => {
   document.getElementById("liveStatements").innerHTML = "";
 
   renderSusBoard();
+  renderVoteBoard(data.viewerVotes || []);
 });
 
 socket.on("suspicionUpdate", (data) => {
   players = data.players || [];
   renderSusBoard();
+});
+
+socket.on("voteUpdate", (data) => {
+  renderVoteBoard(data.viewerVotes || []);
 });
 
 socket.on("timerUpdate", (timeLeft) => {
@@ -101,6 +107,23 @@ function renderSusBoard() {
       </div>
     `).join("")
     : "<p>No suspects yet.</p>";
+}
+
+function renderVoteBoard(votes) {
+  const board = document.getElementById("viewerVotes");
+  if (!board) return;
+
+  const activeVotes = (votes || []).filter((v) => v.votes > 0).slice(0, 5);
+
+  board.innerHTML = activeVotes.length
+    ? activeVotes.map((v, index) => `
+      <div class="broadcastSusRow ${index === 0 ? "topSuspectGlow" : ""}">
+        <span>${index + 1}. ${escapeHtml(v.name)}</span>
+        <div class="broadcastMeter"><div style="width:${v.percent || 0}%"></div></div>
+        <b>${v.percent || 0}%</b>
+      </div>
+    `).join("")
+    : "<p>No viewer votes yet.</p>";
 }
 
 function renderStatements() {

@@ -53,6 +53,13 @@ io.on("connection", (socket) => {
 
     if (role === "overlay") {
       emitRoomUpdate(roomId);
+      emitVoteUpdate(roomId);
+      return;
+    }
+
+    if (role === "voter") {
+      emitRoomUpdate(roomId);
+      emitVoteUpdate(roomId);
       return;
     }
 
@@ -280,6 +287,7 @@ io.on("connection", (socket) => {
     room.roundNumber += 1;
     room.timeLeft = room.settings.roundTime;
     room.accused = null;
+    room.viewerVotes = {};
     room.midEvidenceDropped = false;
     room.spotlightPlayerId = null;
 
@@ -324,6 +332,8 @@ io.on("connection", (socket) => {
       evidence: room.evidence,
       suggestedQuestions: room.suggestedQuestions,
       players: publicPlayers(room.players),
+      viewerVotes: voteSummary(room),
+      voteLink: `/vote.html?room=${roomId}`,
       roundNumber: room.roundNumber,
       timeLeft: room.timeLeft,
       unlimitedTime: room.settings.roundTime === 0,
@@ -521,6 +531,20 @@ io.on("connection", (socket) => {
     emitRoomUpdate(roomId);
   });
 
+  socket.on("voteCast", ({ roomId, voterId, playerId }) => {
+    if (!roomId || !voterId || !playerId) return;
+
+    roomId = String(roomId).trim().toUpperCase();
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const player = room.players.find((p) => p.id === playerId);
+    if (!player) return;
+
+    room.viewerVotes[String(voterId).slice(0, 64)] = playerId;
+    emitVoteUpdate(roomId);
+  });
+
   socket.on("disconnect", () => {
     for (const roomId of Object.keys(rooms)) {
       const room = rooms[roomId];
@@ -555,6 +579,7 @@ function createRoom(hostKey) {
     suggestedQuestions: [],
     accused: null,
     spotlightPlayerId: null,
+    viewerVotes: {},
     settings: { ...DEFAULT_SETTINGS }
   };
 }
@@ -1090,6 +1115,36 @@ function generateFalseLead(room, player) {
   ]);
 }
 
+function voteSummary(room) {
+  const counts = {};
+  room.players.forEach((p) => {
+    counts[p.id] = 0;
+  });
+
+  Object.values(room.viewerVotes || {}).forEach((playerId) => {
+    if (counts[playerId] !== undefined) counts[playerId] += 1;
+  });
+
+  const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+
+  return room.players.map((p) => ({
+    id: p.id,
+    name: p.name,
+    votes: counts[p.id] || 0,
+    percent: total ? Math.round(((counts[p.id] || 0) / total) * 100) : 0
+  })).sort((a, b) => b.votes - a.votes);
+}
+
+function emitVoteUpdate(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  io.to(roomId).emit("voteUpdate", {
+    players: publicPlayers(room.players),
+    viewerVotes: voteSummary(room)
+  });
+}
+
 function publicPlayers(players) {
   return players.map((p) => ({
     id: p.id,
@@ -1106,6 +1161,7 @@ function emitRoomUpdate(roomId) {
 
   io.to(roomId).emit("roomUpdate", {
     players: publicPlayers(room.players),
+    viewerVotes: voteSummary(room),
     state: room.state,
     roundNumber: room.roundNumber,
     minPlayers: room.settings.minPlayers,

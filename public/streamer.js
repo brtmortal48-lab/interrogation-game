@@ -49,6 +49,7 @@ function join() {
   document.getElementById("detectiveLabel").innerText = streamerName;
   document.getElementById("inviteLink").value = `${window.location.origin}/player.html?room=${roomId}`;
   document.getElementById("overlayLink").value = `${window.location.origin}/overlay.html?room=${roomId}`;
+  document.getElementById("voteLink").value = `${window.location.origin}/vote.html?room=${roomId}`;
 
   socket.emit("joinRoom", {
     roomId,
@@ -73,6 +74,7 @@ function toggleRoomLock() {
 
 function copyInvite() { copyInput("inviteLink"); }
 function copyOverlay() { copyInput("overlayLink"); }
+function copyVote() { copyInput("voteLink"); }
 
 function copyInput(id) {
   const el = document.getElementById(id);
@@ -376,6 +378,7 @@ socket.on("roomUpdate", (data) => {
   renderPlayers(players);
   renderLobby(players);
   renderTheoryBoard();
+  renderVoteBoard(data.viewerVotes || []);
 
   document.getElementById("roundNumber").innerText = data.roundNumber || 0;
   document.getElementById("playerCount").innerText = `${players.length} / ${maxPlayers}`;
@@ -399,6 +402,7 @@ socket.on("roundStarted", (data) => {
 
   renderPlayers(players);
   renderTheoryBoard();
+  renderVoteBoard(data.viewerVotes || []);
 });
 
 socket.on("midEvidenceDrop", (e) => {
@@ -476,6 +480,10 @@ socket.on("reveal", (data) => {
   addSystemMessage("Truth revealed.");
 });
 
+socket.on("voteUpdate", (data) => {
+  renderVoteBoard(data.viewerVotes || []);
+});
+
 socket.on("soundCue", playSound);
 
 function updateTimerDisplay(timeLeft) {
@@ -492,6 +500,25 @@ function updateTimerDisplay(timeLeft) {
 
   if (timeLeft <= 30) timer.classList.add("timerDanger");
   else if (timeLeft <= 60) timer.classList.add("timerWarning");
+}
+
+function renderVoteBoard(votes) {
+  const div = document.getElementById("viewerVotes");
+  if (!div) return;
+
+  const activeVotes = (votes || []).filter((v) => v.votes > 0);
+
+  if (!activeVotes.length) {
+    div.innerHTML = `<p class="hint">No viewer votes yet.</p>`;
+    return;
+  }
+
+  div.innerHTML = activeVotes.map((v) => `
+    <div class="voteRow">
+      <div class="voteTop"><b>${escapeHtml(v.name)}</b><span>${v.votes} vote${v.votes === 1 ? "" : "s"} • ${v.percent}%</span></div>
+      <div class="voteMeter"><div style="width:${v.percent}%"></div></div>
+    </div>
+  `).join("");
 }
 
 function renderCaseFile(caseFile) {

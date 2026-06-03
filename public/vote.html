@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The Interrogation - Viewer Vote</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>📊 Viewer Vote</h1>
+<p class="creatorSmall">Pick who you think the murderer is. No login needed.</p>
+
+<div class="topbar">
+  <input id="room" placeholder="Room ID">
+  <button onclick="joinVoteRoom()">Join Vote</button>
+</div>
+
+<section class="panel">
+  <h2>Current Suspects</h2>
+  <p class="hint">You can change your vote anytime before the reveal.</p>
+  <div id="votePlayers" class="voteChoices">Enter a room code to vote.</div>
+</section>
+
+<section class="panel">
+  <h2>Live Viewer Results</h2>
+  <div id="voteResults" class="voteBoard"><p class="hint">Votes will appear here.</p></div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="vote.js"></script>
+
+</body>
+</html>

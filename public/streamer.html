@@ -74,6 +74,12 @@
     <input id="overlayLink" readonly>
     <button onclick="copyOverlay()">Copy</button>
   </div>
+
+  <div>
+    <b>Viewer Vote</b>
+    <input id="voteLink" readonly>
+    <button onclick="copyVote()">Copy</button>
+  </div>
 </section>
 
 <section class="panel lockPanel">
@@ -136,6 +142,12 @@
         <h3>Prime Suspect</h3>
         <div id="primeBoard"></div>
       </div>
+    </section>
+
+    <section class="panel">
+      <h2>📊 Viewer Vote</h2>
+      <p class="hint">Share the Viewer Vote link with stream chat. No Twitch login needed.</p>
+      <div id="viewerVotes" class="voteBoard"><p class="hint">Votes appear after viewers vote.</p></div>
     </section>
 
     <section class="panel">
