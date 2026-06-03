@@ -609,8 +609,11 @@ io.on("connection", (socket) => {
     player.suspicion = Math.max(0, Math.min(100, player.suspicion + amount));
 
     io.to(roomId).emit("suspicionUpdate", {
-      players: publicPlayers(room.players)
+      players: publicPlayers(room.players),
+      detectiveDirector: generateDetectiveDirector(room),
+      caseIntensity: calculateCaseIntensity(room)
     });
+    emitDirectorUpdate(roomId);
   });
 
   socket.on("accuse", ({ roomId, playerId }) => {
@@ -709,6 +712,7 @@ io.on("connection", (socket) => {
 
     room.playerVotes[voter.id] = target.id;
     io.to(roomId).emit("playerVoteUpdate", { playerVotes: playerVoteSummary(room) });
+    emitDirectorUpdate(roomId);
     io.to(voter.id).emit("systemMessage", `Your emergency vote is on ${target.name}.`);
   });
 
@@ -724,6 +728,7 @@ io.on("connection", (socket) => {
 
     room.viewerVotes[String(voterId).slice(0, 64)] = playerId;
     emitVoteUpdate(roomId);
+    emitDirectorUpdate(roomId);
   });
 
   socket.on("disconnect", () => {
@@ -767,6 +772,7 @@ function triggerStreamEvent(roomId, room, type) {
     io.to(roomId).emit("streamEvent", event);
     io.to(roomId).emit("systemMessage", "📢 Stream Event: everyone must state their alibi.");
     io.to(roomId).emit("soundCue", "pressure");
+    emitDirectorUpdate(roomId);
     return;
   }
 
@@ -803,6 +809,7 @@ function triggerStreamEvent(roomId, room, type) {
         io.to(player.id).emit("pressureCleared");
       }
     }, 20000);
+    emitDirectorUpdate(roomId);
     return;
   }
 
@@ -825,6 +832,7 @@ function triggerStreamEvent(roomId, room, type) {
     emitVoteUpdate(roomId);
     io.to(roomId).emit("systemMessage", "🗳 Emergency Vote started. Viewer and player votes reset.");
     io.to(roomId).emit("soundCue", "accuse");
+    emitDirectorUpdate(roomId);
     return;
   }
 
@@ -845,6 +853,7 @@ function triggerStreamEvent(roomId, room, type) {
     io.to(roomId).emit("midEvidenceDrop", lead);
     io.to(roomId).emit("systemMessage", "🔎 Stream Event: a fresh lead entered the investigation.");
     io.to(roomId).emit("soundCue", "twist");
+    emitDirectorUpdate(roomId);
   }
 }
 
@@ -1010,6 +1019,8 @@ function createRoom(hostKey) {
     viewerVotes: {},
     playerVotes: {},
     activeStreamEvent: null,
+    directorHistory: [],
+    caseIntensity: 0,
     statementHistory: [],
     contradictions: [],
     settings: { ...DEFAULT_SETTINGS }
@@ -1705,7 +1716,9 @@ function emitVoteUpdate(roomId) {
 
   io.to(roomId).emit("voteUpdate", {
     players: publicPlayers(room.players),
-    viewerVotes: voteSummary(room)
+    viewerVotes: voteSummary(room),
+    detectiveDirector: generateDetectiveDirector(room),
+    caseIntensity: calculateCaseIntensity(room)
   });
 }
 
@@ -1773,7 +1786,8 @@ function detectContradiction(roomId, room, player, message) {
   player.suspicion = Math.max(0, Math.min(100, (player.suspicion || 0) + 10));
 
   io.to(roomId).emit("contradictionFound", contradiction);
-  io.to(roomId).emit("suspicionUpdate", { players: publicPlayers(room.players) });
+  io.to(roomId).emit("suspicionUpdate", { players: publicPlayers(room.players), detectiveDirector: generateDetectiveDirector(room), caseIntensity: calculateCaseIntensity(room) });
+  emitDirectorUpdate(roomId);
   io.to(roomId).emit("soundCue", "twist");
 }
 
@@ -2055,6 +2069,159 @@ function profileLeaderboard() {
     .slice(0, 10);
 }
 
+function calculateCaseIntensity(room) {
+  if (!room) return { score: 0, label: "Calm", reasons: [] };
+
+  const reasons = [];
+  let score = 0;
+
+  const contradictionCount = (room.contradictions || []).length;
+  if (contradictionCount) {
+    score += Math.min(30, contradictionCount * 10);
+    reasons.push(`${contradictionCount} contradiction${contradictionCount === 1 ? "" : "s"}`);
+  }
+
+  const topSuspicion = Math.max(0, ...room.players.map((p) => p.suspicion || 0));
+  if (topSuspicion >= 20) {
+    score += Math.min(30, Math.floor(topSuspicion / 2));
+    reasons.push(`top suspicion ${topSuspicion}%`);
+  }
+
+  const viewerVotes = Object.keys(room.viewerVotes || {}).length;
+  const playerVotes = Object.keys(room.playerVotes || {}).length;
+  if (viewerVotes || playerVotes) {
+    score += Math.min(20, viewerVotes * 2 + playerVotes * 4);
+    reasons.push(`${viewerVotes + playerVotes} vote${viewerVotes + playerVotes === 1 ? "" : "s"}`);
+  }
+
+  if (room.activeStreamEvent) {
+    score += 15;
+    reasons.push(room.activeStreamEvent.title || "stream event");
+  }
+
+  if (room.spotlightPlayerId) {
+    score += 10;
+    reasons.push("spotlight active");
+  }
+
+  if (room.timeLeft && room.settings && room.settings.roundTime > 0 && room.timeLeft <= 30) {
+    score += 15;
+    reasons.push("final seconds");
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  const label = score >= 75 ? "Chaotic" : score >= 50 ? "Heated" : score >= 25 ? "Tense" : "Calm";
+  return { score, label, reasons: reasons.slice(0, 3) };
+}
+
+function generateDetectiveDirector(room) {
+  if (!room || !room.players) {
+    return [{ type: "info", title: "Waiting", text: "Start a round to receive detective suggestions.", action: "Start Round" }];
+  }
+
+  const suggestions = [];
+  const players = room.players || [];
+  const topSuspect = [...players].sort((a, b) => (b.suspicion || 0) - (a.suspicion || 0))[0];
+  const viewerTop = voteSummary(room).find((v) => v.votes > 0);
+  const playerVoteTop = playerVoteSummary(room).find((v) => v.votes > 0);
+  const contradiction = (room.contradictions || [])[0];
+
+  if (contradiction) {
+    suggestions.push({
+      type: "danger",
+      title: "Question contradiction",
+      text: `${contradiction.playerName} has a location conflict: ${contradiction.earlierLocation} → ${contradiction.currentLocation}.`,
+      action: `Ask ${contradiction.playerName} to explain the timeline.`
+    });
+  }
+
+  if (viewerTop && viewerTop.percent >= 35) {
+    suggestions.push({
+      type: "vote",
+      title: "Audience pressure",
+      text: `Viewers are focusing on ${viewerTop.name} with ${viewerTop.percent}% of votes.`,
+      action: `Spotlight or directly question ${viewerTop.name}.`
+    });
+  }
+
+  if (playerVoteTop && playerVoteTop.percent >= 35) {
+    suggestions.push({
+      type: "vote",
+      title: "Player vote pressure",
+      text: `Players are leaning toward ${playerVoteTop.name} with ${playerVoteTop.percent}% of emergency votes.`,
+      action: `Ask voters why they chose ${playerVoteTop.name}.`
+    });
+  }
+
+  const relationshipTarget = players.find((p) => p.relationshipTargetName && (p.suspicion || 0) < 70);
+  if (relationshipTarget) {
+    suggestions.push({
+      type: "relationship",
+      title: "Relationship angle",
+      text: `${relationshipTarget.name} has a connection involving ${relationshipTarget.relationshipTargetName}.`,
+      action: `Ask ${relationshipTarget.name}: why does that connection matter?`
+    });
+  }
+
+  const motiveTarget = players.find((p) => p.motive && (p.suspicion || 0) >= 20) || players.find((p) => p.motive);
+  if (motiveTarget) {
+    suggestions.push({
+      type: "motive",
+      title: "Motive check",
+      text: `${motiveTarget.name} has a personal motive that may make them look suspicious.`,
+      action: `Ask if the motive is guilt or just panic.`
+    });
+  }
+
+  const evidenceHolder = players.find((p) => p.evidenceFragment && !p.revealedClue);
+  if (evidenceHolder) {
+    suggestions.push({
+      type: "evidence",
+      title: "Evidence fragment",
+      text: `${evidenceHolder.name} is holding a fragment that may help the case.`,
+      action: `Ask ${evidenceHolder.name} what type of fragment they have, not who it proves.`
+    });
+  }
+
+  if (topSuspect && (topSuspect.suspicion || 0) >= 50) {
+    suggestions.push({
+      type: "suspect",
+      title: "High suspicion",
+      text: `${topSuspect.name} is at ${topSuspect.suspicion}% suspicion.`,
+      action: `Either pressure ${topSuspect.name} or ask who can confirm their alibi.`
+    });
+  }
+
+  if (!room.activeStreamEvent && suggestions.length < 3 && room.state === "playing") {
+    suggestions.push({
+      type: "pace",
+      title: "Keep the round moving",
+      text: "If the room becomes quiet, use a Stream Event instead of waiting.",
+      action: "Use Force Alibis or Drop New Lead."
+    });
+  }
+
+  if (!suggestions.length) {
+    suggestions.push({
+      type: "info",
+      title: "Start with alibis",
+      text: "Begin by asking every player where they were and who can confirm it.",
+      action: "Ask the first player for their route."
+    });
+  }
+
+  return suggestions.slice(0, 5);
+}
+
+function emitDirectorUpdate(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+  io.to(roomId).emit("directorUpdate", {
+    detectiveDirector: generateDetectiveDirector(room),
+    caseIntensity: calculateCaseIntensity(room)
+  });
+}
+
 function publicPlayers(players) {
   return players.map((p) => ({
     id: p.id,
@@ -2078,6 +2245,8 @@ function emitRoomUpdate(roomId) {
     hostProfileStats: room.hostProfileId ? getHostProfileStats(room.hostProfileId) : null,
     hostLeaderboard: hostProfileLeaderboard(),
     activeStreamEvent: room.activeStreamEvent,
+    detectiveDirector: generateDetectiveDirector(room),
+    caseIntensity: calculateCaseIntensity(room),
     state: room.state,
     roundNumber: room.roundNumber,
     minPlayers: room.settings.minPlayers,

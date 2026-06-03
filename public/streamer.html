@@ -40,6 +40,7 @@
   <div><span>Round</span><b id="roundNumber">0</b></div>
   <div><span>Accused</span><b id="accused">None</b></div>
   <div><span>Spotlight</span><b id="spotlight">None</b></div>
+  <div><span>Intensity</span><b id="caseIntensityLabel">Calm</b></div>
 </section>
 
 <nav class="uxTabs">
@@ -67,18 +68,19 @@
         </div>
       </section>
 
-      <section class="panel uxCardLarge">
+      <section class="panel uxCardLarge directorCard">
         <div class="uxSectionTitle">
-          <h2>🎬 Stream Events</h2>
-          <p>Use one when the room becomes quiet.</p>
+          <h2>🎬 Detective Director</h2>
+          <p>Live suggestions to keep the interrogation moving.</p>
         </div>
-        <div class="uxEventGrid">
-          <button onclick="triggerStreamEvent('forceAlibis')">📢 Force Alibis</button>
-          <button onclick="triggerStreamEvent('randomSpotlight')">🎯 Random Spotlight</button>
-          <button onclick="triggerStreamEvent('emergencyVote')">🗳 Emergency Vote</button>
-          <button onclick="triggerStreamEvent('newLead')">🔎 New Lead</button>
+        <div id="caseIntensity" class="caseIntensityBox">
+          <div class="intensityTop"><b>Case Intensity</b><span>Calm</span></div>
+          <div class="intensityMeter"><div style="width:0%"></div></div>
+          <small>No pressure yet.</small>
         </div>
-        <div id="activeStreamEvent" class="uxActiveEvent">No active stream event.</div>
+        <div id="detectiveDirector" class="directorList">
+          <p class="hint">Start a round to receive director suggestions.</p>
+        </div>
       </section>
     </div>
 
@@ -113,6 +115,7 @@
           <button onclick="triggerStreamEvent('emergencyVote')"><b>🗳 Emergency Vote</b><span>Viewers and players vote immediately.</span></button>
           <button onclick="triggerStreamEvent('newLead')"><b>🔎 New Lead</b><span>Add a clue without naming anyone.</span></button>
         </div>
+        <div id="activeStreamEvent" class="uxActiveEvent">No active stream event.</div>
       </section>
 
       <section class="panel uxCardLarge">

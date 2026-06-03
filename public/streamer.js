@@ -511,9 +511,13 @@ socket.on("roomUpdate", (data) => {
   renderPlayers(players);
   renderLobby(players);
   renderTheoryBoard();
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
   renderVoteBoard(data.viewerVotes || []);
   renderPlayerVoteBoard(data.playerVotes || []);
   renderProfileLeaderboard(data.leaderboard || []);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 
   document.getElementById("roundNumber").innerText = data.roundNumber || 0;
   document.getElementById("playerCount").innerText = `${players.length} / ${maxPlayers}`;
@@ -540,6 +544,8 @@ socket.on("roundStarted", (data) => {
   renderVoteBoard(data.viewerVotes || []);
   renderPlayerVoteBoard(data.playerVotes || []);
   renderProfileLeaderboard(data.leaderboard || []);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
   if (data.activeStreamEvent) renderStreamEvent(data.activeStreamEvent);
 });
 
@@ -651,10 +657,17 @@ socket.on("reveal", (data) => {
 
 socket.on("voteUpdate", (data) => {
   renderVoteBoard(data.viewerVotes || []);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 });
 
 socket.on("playerVoteUpdate", (data) => {
   renderPlayerVoteBoard(data.playerVotes || []);
+});
+
+socket.on("directorUpdate", (data) => {
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 });
 
 socket.on("streamEvent", (event) => {
@@ -680,6 +693,45 @@ function updateTimerDisplay(timeLeft) {
   else if (timeLeft <= 60) timer.classList.add("timerWarning");
 }
 
+
+
+function renderDirector(items) {
+  const box = document.getElementById("detectiveDirector");
+  if (!box) return;
+
+  const rows = (items || []).slice(0, 5);
+  if (!rows.length) {
+    box.innerHTML = `<p class="hint">No director suggestions yet.</p>`;
+    return;
+  }
+
+  box.innerHTML = rows.map((item) => `
+    <div class="directorItem ${escapeHtml(item.type || "info")}">
+      <div>
+        <b>${escapeHtml(item.title || "Suggestion")}</b>
+        <p>${escapeHtml(item.text || "")}</p>
+      </div>
+      <small>${escapeHtml(item.action || "Ask a follow-up question.")}</small>
+    </div>
+  `).join("");
+}
+
+function renderIntensity(intensity) {
+  const label = document.getElementById("caseIntensityLabel");
+  const box = document.getElementById("caseIntensity");
+  if (!intensity) intensity = { score: 0, label: "Calm", reasons: [] };
+
+  if (label) label.innerText = intensity.label || "Calm";
+  if (!box) return;
+
+  const score = Math.max(0, Math.min(100, Number(intensity.score || 0)));
+  box.className = `caseIntensityBox intensity${escapeHtml(intensity.label || "Calm")}`;
+  box.innerHTML = `
+    <div class="intensityTop"><b>Case Intensity</b><span>${escapeHtml(intensity.label || "Calm")} • ${score}%</span></div>
+    <div class="intensityMeter"><div style="width:${score}%"></div></div>
+    <small>${(intensity.reasons || []).length ? escapeHtml((intensity.reasons || []).join(" • ")) : "No major pressure yet."}</small>
+  `;
+}
 
 function renderProfileLeaderboard(list) {
   const box = document.getElementById("profileLeaderboard");

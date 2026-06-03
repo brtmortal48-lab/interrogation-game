@@ -30,6 +30,10 @@ socket.on("roomUpdate", (data) => {
 
   renderSusBoard();
   renderVoteBoard(data.viewerVotes || []);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 });
 
 socket.on("roundStarted", (data) => {
@@ -51,15 +55,21 @@ socket.on("roundStarted", (data) => {
 
   renderSusBoard();
   renderVoteBoard(data.viewerVotes || []);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 });
 
 socket.on("suspicionUpdate", (data) => {
   players = data.players || [];
   renderSusBoard();
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 });
 
 socket.on("voteUpdate", (data) => {
   renderVoteBoard(data.viewerVotes || []);
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
 });
 
 socket.on("timerUpdate", (timeLeft) => {
@@ -107,6 +117,11 @@ socket.on("playerVoteUpdate", (data) => {
   // Reserved for future split player/audience vote display.
 });
 
+socket.on("directorUpdate", (data) => {
+  renderDirector(data.detectiveDirector || []);
+  renderIntensity(data.caseIntensity);
+});
+
 socket.on("newMessage", (data) => {
   statements.unshift(data);
   statements = statements.slice(0, 6);
@@ -131,6 +146,41 @@ socket.on("reveal", (data) => {
 
   document.getElementById("focus").innerText = data.success ? "Solved" : "Murderer Escaped";
 });
+
+
+function renderDirector(items) {
+  const box = document.getElementById("broadcastDirector");
+  if (!box) return;
+
+  const rows = (items || []).slice(0, 3);
+  if (!rows.length) {
+    box.innerHTML = "<p>No guidance yet.</p>";
+    return;
+  }
+
+  box.innerHTML = rows.map((item) => `
+    <div class="broadcastDirectorItem ${escapeHtml(item.type || "info")}">
+      <b>${escapeHtml(item.title || "Suggestion")}</b>
+      <p>${escapeHtml(item.action || item.text || "Ask a follow-up question.")}</p>
+    </div>
+  `).join("");
+}
+
+function renderIntensity(intensity) {
+  const label = document.getElementById("caseIntensityLabel");
+  const box = document.getElementById("broadcastIntensity");
+  if (!intensity) intensity = { score: 0, label: "Calm", reasons: [] };
+  const score = Math.max(0, Math.min(100, Number(intensity.score || 0)));
+
+  if (label) label.innerText = intensity.label || "Calm";
+  if (!box) return;
+
+  box.className = `broadcastIntensity broadcastIntensity${escapeHtml(intensity.label || "Calm")}`;
+  box.innerHTML = `
+    <div><b>Case Intensity</b><span>${escapeHtml(intensity.label || "Calm")} • ${score}%</span></div>
+    <div class="broadcastIntensityMeter"><div style="width:${score}%"></div></div>
+  `;
+}
 
 function renderSusBoard() {
   const board = document.getElementById("susBoard");
