@@ -101,6 +101,10 @@ io.on("connection", (socket) => {
         revealedClue: false,
         anonymousUsed: false,
         abilityUsed: false,
+        bonusObjective: "",
+        bonusCompleted: false,
+        bonusTargetId: null,
+        bonusTargetName: null,
         score: 0,
         pressure: null
       });
@@ -289,6 +293,8 @@ io.on("connection", (socket) => {
     room.timeLeft = room.settings.roundTime;
     room.accused = null;
     room.viewerVotes = {};
+    room.playerVotes = {};
+    room.activeStreamEvent = null;
     room.midEvidenceDropped = false;
     room.spotlightPlayerId = null;
 
@@ -305,6 +311,7 @@ io.on("connection", (socket) => {
       p.revealedClue = false;
       p.anonymousUsed = false;
       p.abilityUsed = false;
+      p.bonusCompleted = false;
       p.pressure = null;
 
       io.to(p.id).emit("privateData", {
@@ -316,6 +323,7 @@ io.on("connection", (socket) => {
         observationQuality: p.observationQuality,
         confidence: p.observationQuality,
         objective: p.objective,
+        bonusObjective: p.bonusObjective,
         abilityName: p.abilityName,
         abilityDescription: p.abilityDescription,
         canUseAnonymous: true,
@@ -334,6 +342,8 @@ io.on("connection", (socket) => {
       suggestedQuestions: room.suggestedQuestions,
       players: publicPlayers(room.players),
       viewerVotes: voteSummary(room),
+      playerVotes: playerVoteSummary(room),
+      activeStreamEvent: room.activeStreamEvent,
       voteLink: `/vote.html?room=${roomId}`,
       roundNumber: room.roundNumber,
       timeLeft: room.timeLeft,
@@ -443,6 +453,15 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("soundCue", "pressure");
   });
 
+
+  socket.on("streamEvent", ({ roomId, type }) => {
+    roomId = String(roomId || "").trim().toUpperCase();
+    const room = rooms[roomId];
+    if (!room || socket.id !== room.streamer) return;
+
+    triggerStreamEvent(roomId, room, type);
+  });
+
   socket.on("adjustSuspicion", ({ roomId, playerId, amount }) => {
     const room = rooms[roomId];
     if (!room || socket.id !== room.streamer) return;
@@ -498,6 +517,8 @@ io.on("connection", (socket) => {
       p.lastGained = gained;
     });
 
+    evaluateBonusObjectives(room, murderer, accused, success);
+
     const witnesses = room.players.filter((p) => p.role === "Witness");
     const escaped = !success && murderer ? murderer.name : null;
 
@@ -524,6 +545,8 @@ io.on("connection", (socket) => {
         fakeRevealClue: p.fakeRevealClue,
         observationQuality: p.observationQuality,
         confidence: p.observationQuality,
+        bonusObjective: p.bonusObjective,
+        bonusCompleted: p.bonusCompleted,
         suspicion: p.suspicion,
         score: p.score,
         gained: p.lastGained || 0
@@ -532,6 +555,21 @@ io.on("connection", (socket) => {
 
     io.to(roomId).emit("soundCue", success ? "success" : "fail");
     emitRoomUpdate(roomId);
+  });
+
+
+  socket.on("playerVoteCast", ({ roomId, playerId }) => {
+    roomId = String(roomId || "").trim().toUpperCase();
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const voter = room.players.find((p) => p.id === socket.id);
+    const target = room.players.find((p) => p.id === playerId);
+    if (!voter || !target) return;
+
+    room.playerVotes[voter.id] = target.id;
+    io.to(roomId).emit("playerVoteUpdate", { playerVotes: playerVoteSummary(room) });
+    io.to(voter.id).emit("systemMessage", `Your emergency vote is on ${target.name}.`);
   });
 
   socket.on("voteCast", ({ roomId, voterId, playerId }) => {
@@ -563,6 +601,251 @@ io.on("connection", (socket) => {
   });
 });
 
+
+function triggerStreamEvent(roomId, room, type) {
+  if (!room || room.players.length === 0) return;
+
+  if (type === "forceAlibis") {
+    const event = {
+      type,
+      icon: "📢",
+      title: "FORCE ALIBIS",
+      message: "Everyone must answer: Where were you? What were you doing? Who can verify it?",
+      seconds: 30
+    };
+    room.activeStreamEvent = event;
+
+    room.players.forEach((p) => {
+      io.to(p.id).emit("streamEvent", event);
+      io.to(p.id).emit("pressure", {
+        type: "alibi",
+        message: "STREAM EVENT: State your alibi. Where were you, what were you doing, and who can verify it?"
+      });
+    });
+
+    io.to(roomId).emit("streamEvent", event);
+    io.to(roomId).emit("systemMessage", "📢 Stream Event: everyone must state their alibi.");
+    io.to(roomId).emit("soundCue", "pressure");
+    return;
+  }
+
+  if (type === "randomSpotlight") {
+    const player = random(room.players);
+    if (!player) return;
+
+    const event = {
+      type,
+      icon: "🎯",
+      title: "RANDOM SPOTLIGHT",
+      message: `${player.name} has been selected. Defend your alibi now.`,
+      playerId: player.id,
+      playerName: player.name,
+      seconds: 20
+    };
+    room.activeStreamEvent = event;
+    room.spotlightPlayerId = player.id;
+
+    io.to(player.id).emit("streamEvent", event);
+    io.to(player.id).emit("pressure", {
+      type: "spotlight",
+      message: "Random Spotlight: defend your alibi right now."
+    });
+    io.to(roomId).emit("streamEvent", event);
+    io.to(roomId).emit("spotlight", { playerId: player.id, playerName: player.name, seconds: 20 });
+    io.to(roomId).emit("systemMessage", `🎯 Random Spotlight selected ${player.name}.`);
+    io.to(roomId).emit("soundCue", "pressure");
+
+    setTimeout(() => {
+      if (rooms[roomId]) {
+        rooms[roomId].spotlightPlayerId = null;
+        io.to(roomId).emit("spotlightEnd");
+        io.to(player.id).emit("pressureCleared");
+      }
+    }, 20000);
+    return;
+  }
+
+  if (type === "emergencyVote") {
+    room.viewerVotes = {};
+    room.playerVotes = {};
+
+    const event = {
+      type,
+      icon: "🗳",
+      title: "EMERGENCY VOTE",
+      message: "Everyone vote now. Viewers and players choose who looks most suspicious.",
+      seconds: 45
+    };
+    room.activeStreamEvent = event;
+
+    room.players.forEach((p) => io.to(p.id).emit("streamEvent", event));
+    io.to(roomId).emit("streamEvent", event);
+    io.to(roomId).emit("playerVoteUpdate", { playerVotes: playerVoteSummary(room) });
+    emitVoteUpdate(roomId);
+    io.to(roomId).emit("systemMessage", "🗳 Emergency Vote started. Viewer and player votes reset.");
+    io.to(roomId).emit("soundCue", "accuse");
+    return;
+  }
+
+  if (type === "newLead") {
+    const lead = generateStreamEventLead(room);
+    room.evidence.push(lead);
+
+    const event = {
+      type,
+      icon: "🔎",
+      title: "NEW LEAD",
+      message: lead.text,
+      seconds: 15
+    };
+    room.activeStreamEvent = event;
+
+    io.to(roomId).emit("streamEvent", event);
+    io.to(roomId).emit("midEvidenceDrop", lead);
+    io.to(roomId).emit("systemMessage", "🔎 Stream Event: a fresh lead entered the investigation.");
+    io.to(roomId).emit("soundCue", "twist");
+  }
+}
+
+function generateStreamEventLead(room) {
+  return random([
+    {
+      type: "Stream Lead",
+      reliability: "Questionable",
+      text: `A recovered witness note says someone left ${room.incident.location} shortly before the incident. Identity unclear.`
+    },
+    {
+      type: "Stream Lead",
+      reliability: "Questionable",
+      text: `A fresh report says one alibi sounded too rehearsed, but the report does not name anyone.`
+    },
+    {
+      type: "Stream Lead",
+      reliability: "Corrupted",
+      text: `A damaged record confirms movement near ${room.incident.location}, but the figure cannot be identified.`
+    },
+    {
+      type: "Stream Lead",
+      reliability: "Questionable",
+      text: `Someone may have changed their story after pressure. Re-check the first alibis.`
+    }
+  ]);
+}
+
+function assignBonusObjectives(room, murderer, frameTarget) {
+  room.players.forEach((p) => {
+    p.bonusCompleted = false;
+    p.bonusTargetId = null;
+    p.bonusTargetName = null;
+
+    if (p.role === "Murderer") {
+      const target = frameTarget && frameTarget.id !== p.id ? frameTarget : random(room.players.filter((x) => x.id !== p.id));
+      p.bonusTargetId = target ? target.id : null;
+      p.bonusTargetName = target ? target.name : null;
+      p.bonusObjective = target
+        ? `Bonus: make ${target.name} become the final accusation or strongest suspect.`
+        : "Bonus: make another player take the blame.";
+      return;
+    }
+
+    if (p.role === "Accomplice") {
+      p.bonusTargetId = murderer ? murderer.id : null;
+      p.bonusTargetName = murderer ? murderer.name : null;
+      p.bonusObjective = murderer
+        ? `Bonus: keep ${murderer.name} from being accused.`
+        : "Bonus: help the murderer escape.";
+      return;
+    }
+
+    if (p.role === "Witness") {
+      p.bonusObjective = "Bonus: help the detective accuse the real murderer.";
+      return;
+    }
+
+    if (p.role === "Guard") {
+      p.bonusObjective = "Bonus: use Protect Alibi on someone who ends below 30 suspicion.";
+      return;
+    }
+
+    if (p.role === "Journalist") {
+      p.bonusObjective = "Bonus: use Anonymous Report before the reveal.";
+      return;
+    }
+
+    if (p.role === "Informant") {
+      p.bonusObjective = "Bonus: use Private Hint and help create a useful interrogation.";
+      return;
+    }
+
+    if (p.role === "Lawyer") {
+      p.bonusObjective = "Bonus: defend someone who survives below 40 suspicion.";
+      return;
+    }
+
+    if (p.role === "Analyst") {
+      p.bonusObjective = "Bonus: publish System Analysis before the reveal.";
+      return;
+    }
+
+    if (p.role === "Drifter") {
+      p.bonusObjective = "Bonus: survive the round while staying below 50 suspicion.";
+      return;
+    }
+
+    p.bonusObjective = "Bonus: avoid becoming the final accusation.";
+  });
+}
+
+function evaluateBonusObjectives(room, murderer, accused, success) {
+  room.players.forEach((p) => {
+    let completed = false;
+
+    if (p.role === "Murderer") {
+      completed = !!accused && accused.id !== p.id;
+    } else if (p.role === "Accomplice") {
+      completed = !!murderer && !!accused && accused.id !== murderer.id;
+    } else if (p.role === "Witness") {
+      completed = success;
+    } else if (p.role === "Guard") {
+      const target = room.players.find((x) => x.id === p.abilityTargetId);
+      completed = p.abilityUsed && !!target && (target.suspicion || 0) < 30;
+    } else if (p.role === "Lawyer") {
+      const target = room.players.find((x) => x.id === p.abilityTargetId);
+      completed = p.abilityUsed && !!target && (target.suspicion || 0) < 40;
+    } else if (p.role === "Drifter") {
+      completed = (p.suspicion || 0) < 50 && (!accused || accused.id !== p.id);
+    } else if (["Journalist", "Informant", "Analyst"].includes(p.role)) {
+      completed = !!p.abilityUsed;
+    } else {
+      completed = !accused || accused.id !== p.id;
+    }
+
+    p.bonusCompleted = completed;
+    if (completed) p.score += 25;
+  });
+}
+
+function playerVoteSummary(room) {
+  const counts = {};
+  Object.values(room.playerVotes || {}).forEach((playerId) => {
+    counts[playerId] = (counts[playerId] || 0) + 1;
+  });
+
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+
+  return room.players
+    .map((p) => {
+      const votes = counts[p.id] || 0;
+      return {
+        id: p.id,
+        name: p.name,
+        votes,
+        percent: total ? Math.round((votes / total) * 100) : 0
+      };
+    })
+    .sort((a, b) => b.votes - a.votes);
+}
+
 function createRoom(hostKey) {
   return {
     players: [],
@@ -583,6 +866,8 @@ function createRoom(hostKey) {
     accused: null,
     spotlightPlayerId: null,
     viewerVotes: {},
+    playerVotes: {},
+    activeStreamEvent: null,
     statementHistory: [],
     contradictions: [],
     settings: { ...DEFAULT_SETTINGS }
@@ -643,6 +928,8 @@ function useRoleAbility(roomId, room, player, target) {
     }
 
     target.suspicion = Math.max(0, target.suspicion - 20);
+    player.abilityTargetId = target.id;
+    player.abilityTargetName = target.name;
     io.to(roomId).emit("systemMessage", `Someone quietly protected ${target.name}'s alibi. Suspicion reduced.`);
     io.to(player.id).emit("abilityUsed");
     emitRoomUpdate(roomId);
@@ -687,6 +974,8 @@ function useRoleAbility(roomId, room, player, target) {
     }
 
     target.suspicion = Math.max(0, target.suspicion - 25);
+    player.abilityTargetId = target.id;
+    player.abilityTargetName = target.name;
     io.to(roomId).emit("systemMessage", `${target.name}'s story was defended. Suspicion reduced.`);
     io.to(player.id).emit("abilityUsed");
     emitRoomUpdate(roomId);
@@ -1023,6 +1312,8 @@ function assignAlibisRolesAndClues(room) {
     p.fakeRevealClue = p.fakeRevealClue || null;
     p.anonymousTip = generateAnonymousTip(room, p);
   });
+
+  assignBonusObjectives(room, murderer, frameTarget);
 }
 
 function generateInvestigationBoard(room) {
@@ -1286,6 +1577,8 @@ function emitRoomUpdate(roomId) {
   io.to(roomId).emit("roomUpdate", {
     players: publicPlayers(room.players),
     viewerVotes: voteSummary(room),
+    playerVotes: playerVoteSummary(room),
+    activeStreamEvent: room.activeStreamEvent,
     state: room.state,
     roundNumber: room.roundNumber,
     minPlayers: room.settings.minPlayers,

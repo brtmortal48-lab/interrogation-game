@@ -14,7 +14,7 @@ let musicGain = null;
 let musicNodes = [];
 let musicInterval = null;
 
-let theory = { trusted: [], suspicious: [], prime: [] };
+let theory = { trusted: [], interest: [], major: [], prime: [] };
 
 window.onload = () => {
   const params = new URLSearchParams(window.location.search);
@@ -316,7 +316,7 @@ function setMusicVolume(value) {
 function startRound() {
   if (!roomId) return alert("Join a room first.");
 
-  theory = { trusted: [], suspicious: [], prime: [] };
+  theory = { trusted: [], interest: [], major: [], prime: [] };
 
   document.getElementById("result").innerHTML = "";
   document.getElementById("accused").innerText = "None";
@@ -327,6 +327,11 @@ function startRound() {
 
   renderTheoryBoard();
   socket.emit("startRound", roomId);
+}
+
+function triggerStreamEvent(type) {
+  if (!roomId) return alert("Join a room first.");
+  socket.emit("streamEvent", { roomId, type });
 }
 
 function interrogate(id) { socket.emit("interrogate", { roomId, playerId: id }); }
@@ -341,7 +346,8 @@ function kick(id) {
 
 function moveToBoard(playerId, board) {
   theory.trusted = theory.trusted.filter((id) => id !== playerId);
-  theory.suspicious = theory.suspicious.filter((id) => id !== playerId);
+  theory.interest = theory.interest.filter((id) => id !== playerId);
+  theory.major = theory.major.filter((id) => id !== playerId);
   theory.prime = theory.prime.filter((id) => id !== playerId);
 
   theory[board].push(playerId);
@@ -381,6 +387,7 @@ socket.on("roomUpdate", (data) => {
   renderLobby(players);
   renderTheoryBoard();
   renderVoteBoard(data.viewerVotes || []);
+  renderPlayerVoteBoard(data.playerVotes || []);
 
   document.getElementById("roundNumber").innerText = data.roundNumber || 0;
   document.getElementById("playerCount").innerText = `${players.length} / ${maxPlayers}`;
@@ -405,6 +412,8 @@ socket.on("roundStarted", (data) => {
   renderPlayers(players);
   renderTheoryBoard();
   renderVoteBoard(data.viewerVotes || []);
+  renderPlayerVoteBoard(data.playerVotes || []);
+  if (data.activeStreamEvent) renderStreamEvent(data.activeStreamEvent);
 });
 
 socket.on("midEvidenceDrop", (e) => {
@@ -501,6 +510,7 @@ socket.on("reveal", (data) => {
           <span class="score">+${p.gained} / ${p.score}</span>
           <br><small><b>Alibi:</b> ${escapeHtml(p.publicAlibi || "Unknown")}</small>
           <br><small><b>Observation:</b> ${escapeHtml(p.clue || "None")}</small>
+          <br><small class="bonusObjectiveRow"><b>Bonus:</b> ${escapeHtml(p.bonusObjective || "None")} <span class="${p.bonusCompleted ? "bonusPassed" : "bonusFailed"}">${p.bonusCompleted ? "✓ Completed" : "✗ Failed"}</span></small>
         </div>
       `).join("")}
     </div>
@@ -511,6 +521,15 @@ socket.on("reveal", (data) => {
 
 socket.on("voteUpdate", (data) => {
   renderVoteBoard(data.viewerVotes || []);
+});
+
+socket.on("playerVoteUpdate", (data) => {
+  renderPlayerVoteBoard(data.playerVotes || []);
+});
+
+socket.on("streamEvent", (event) => {
+  renderStreamEvent(event);
+  addSystemMessage(`${event.icon || "🎬"} ${event.title}: ${event.message}`);
 });
 
 socket.on("soundCue", playSound);
@@ -550,6 +569,37 @@ function renderVoteBoard(votes) {
   `).join("");
 }
 
+
+
+function renderPlayerVoteBoard(votes) {
+  const div = document.getElementById("playerVotes");
+  if (!div) return;
+
+  const activeVotes = (votes || []).filter((v) => v.votes > 0);
+
+  if (!activeVotes.length) {
+    div.innerHTML = `<p class="hint">No player emergency votes yet.</p>`;
+    return;
+  }
+
+  div.innerHTML = activeVotes.map((v) => `
+    <div class="voteRow">
+      <div class="voteTop"><b>${escapeHtml(v.name)}</b><span>${v.votes} player vote${v.votes === 1 ? "" : "s"} • ${v.percent}%</span></div>
+      <div class="voteMeter"><div style="width:${v.percent}%"></div></div>
+    </div>
+  `).join("");
+}
+
+function renderStreamEvent(event) {
+  const box = document.getElementById("activeStreamEvent");
+  if (!box || !event) return;
+
+  box.className = "activeStreamEvent liveStreamEvent";
+  box.innerHTML = `
+    <b>${escapeHtml(event.icon || "🎬")} ${escapeHtml(event.title || "Stream Event")}</b>
+    <p>${escapeHtml(event.message || "")}</p>
+  `;
+}
 
 function addContradiction(data) {
   const box = document.getElementById("contradictions");
@@ -629,7 +679,8 @@ function renderPlayers(playerList) {
           <button onclick="suspicion('${p.id}', 20)">+Sus</button>
           <button onclick="suspicion('${p.id}', -20)">-Sus</button>
           <button onclick="moveToBoard('${p.id}', 'trusted')">Trust</button>
-          <button onclick="moveToBoard('${p.id}', 'suspicious')">Watch</button>
+          <button onclick="moveToBoard('${p.id}', 'interest')">Interest</button>
+          <button onclick="moveToBoard('${p.id}', 'major')">Major</button>
           <button class="danger" onclick="accuse('${p.id}')">Accuse</button>
           <button onclick="showMore('${p.id}')">More</button>
         </div>
@@ -653,7 +704,8 @@ function renderLobby(playerList) {
 
 function renderTheoryBoard() {
   renderBoard("trustedBoard", theory.trusted);
-  renderBoard("suspiciousBoard", theory.suspicious);
+  renderBoard("interestBoard", theory.interest);
+  renderBoard("majorBoard", theory.major);
   renderBoard("primeBoard", theory.prime);
 }
 

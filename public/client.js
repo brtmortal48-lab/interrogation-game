@@ -54,6 +54,20 @@ function useAbility() {
   action("ability");
 }
 
+function castEmergencyVote() {
+  if (!players.length) return alert("No players yet.");
+
+  const names = players.map((p, i) => `${i + 1}. ${p.name}`).join("\n");
+  const choice = prompt(`Emergency Vote — choose the most suspicious player:\n${names}`);
+  const index = Number(choice) - 1;
+
+  if (!players[index]) return;
+
+  socket.emit("playerVoteCast", { roomId, playerId: players[index].id });
+  const btn = document.getElementById("playerVoteBtn");
+  if (btn) btn.innerText = `Voted: ${players[index].name}`;
+}
+
 function chooseTarget(actionName) {
   if (!players.length) return alert("No players yet.");
 
@@ -94,6 +108,17 @@ socket.on("roundStarted", (data) => {
   }
 
   document.getElementById("abilityStatus").innerText = "Ability: Available";
+  const streamBox = document.getElementById("streamEventBox");
+  if (streamBox) {
+    streamBox.style.display = "none";
+    streamBox.innerHTML = "";
+  }
+  const voteBtn = document.getElementById("playerVoteBtn");
+  if (voteBtn) {
+    voteBtn.style.display = "none";
+    voteBtn.disabled = false;
+    voteBtn.innerText = "Cast Emergency Vote";
+  }
 
   renderCaseFile(data.caseFile);
 
@@ -109,6 +134,7 @@ socket.on("privateData", (data) => {
   document.getElementById("revealClue").innerText = data.revealClue || data.clue || "Waiting for round...";
   document.getElementById("confidence").innerText = data.observationQuality || data.confidence || "--";
   document.getElementById("objective").innerText = data.objective || "";
+  document.getElementById("bonusObjective").innerText = data.bonusObjective || "No bonus objective this round.";
   document.getElementById("abilityName").innerText = data.abilityName || "Special Ability";
   document.getElementById("abilityDescription").innerText =
     data.abilityDescription || "Your role ability will appear when the round starts.";
@@ -175,6 +201,23 @@ socket.on("newMessage", (data) => {
 });
 
 socket.on("systemMessage", (message) => addSystemMessage(message));
+
+socket.on("streamEvent", (event) => {
+  const box = document.getElementById("streamEventBox");
+  if (box) {
+    box.style.display = "block";
+    box.innerHTML = `<b>${escapeHtml(event.icon || "🎬")} ${escapeHtml(event.title || "Stream Event")}</b><p>${escapeHtml(event.message || "")}</p>`;
+  }
+
+  const voteBtn = document.getElementById("playerVoteBtn");
+  if (voteBtn && event.type === "emergencyVote") {
+    voteBtn.style.display = "inline-block";
+    voteBtn.disabled = false;
+    voteBtn.innerText = "Cast Emergency Vote";
+  }
+
+  addSystemMessage(`${event.icon || "🎬"} ${event.title}: ${event.message}`);
+});
 
 socket.on("roundState", (data) => {
   document.getElementById("status").innerText = data.state;

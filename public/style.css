@@ -1490,3 +1490,88 @@ a.linkBtn {
   place-items: center;
   font-weight: bold;
 }
+
+
+/* Phase 12B: Stream Events + Hidden Objectives */
+.streamEventsPanel .streamEventButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.activeStreamEvent,
+.streamEventBox {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(120, 53, 15, 0.22);
+  box-shadow: 0 0 22px rgba(251, 191, 36, 0.12);
+}
+
+.liveStreamEvent b,
+.streamEventBox b {
+  display: block;
+  color: #fbbf24;
+  margin-bottom: 4px;
+}
+
+.theoryCol.interest,
+.theoryCol.major {
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+.broadcastEventBanner {
+  margin: 16px 0;
+  padding: 16px 20px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(88, 28, 135, 0.88));
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  box-shadow: 0 0 35px rgba(251, 191, 36, 0.2);
+  animation: eventBannerPulse 0.9s infinite alternate;
+}
+
+.broadcastEventBanner .eventIcon {
+  font-size: 42px;
+}
+
+.broadcastEventBanner b {
+  display: block;
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: #fbbf24;
+}
+
+.broadcastEventBanner p {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+
+@keyframes eventBannerPulse {
+  from { transform: scale(1); opacity: 0.92; }
+  to { transform: scale(1.015); opacity: 1; }
+}
+
+.bonusObjectiveRow {
+  border-left: 4px solid rgba(251, 191, 36, 0.8);
+}
+
+.bonusPassed {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.bonusFailed {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .streamEventsPanel .streamEventButtons {
+    grid-template-columns: 1fr;
+  }
+}

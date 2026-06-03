@@ -22,6 +22,7 @@
 </div>
 
 <div id="pressureBox" class="pressureBox" style="display:none;"></div>
+<div id="streamEventBox" class="streamEventBox" style="display:none;"></div>
 
 <div id="game" style="display:none;">
   <div class="status">
@@ -52,6 +53,8 @@
       <p><b id="role">Waiting...</b></p>
       <p><b>Observation Quality:</b> <span id="confidence">--</span></p>
       <p id="objective"></p>
+      <p><b>Bonus Objective:</b></p>
+      <p id="bonusObjective">Waiting for round...</p>
     </div>
   </section>
 
@@ -78,6 +81,7 @@
       <p id="abilityDescription">Your ability will appear when the round starts.</p>
       <button id="abilityBtn" onclick="useAbility()">Use Special Ability</button>
       <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
+      <button id="playerVoteBtn" style="display:none;" onclick="castEmergencyVote()">Cast Emergency Vote</button>
       <p id="abilityStatus" class="hint">Ability: Available</p>
     </div>
   </section>

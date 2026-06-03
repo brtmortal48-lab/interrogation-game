@@ -132,6 +132,18 @@
       </div>
     </section>
 
+    <section class="panel streamEventsPanel">
+      <h2>🎬 Stream Events</h2>
+      <p class="hint">Use these when the round slows down or you want instant drama.</p>
+      <div class="streamEventButtons">
+        <button onclick="triggerStreamEvent('forceAlibis')">📢 Force Alibis</button>
+        <button onclick="triggerStreamEvent('randomSpotlight')">🎯 Random Spotlight</button>
+        <button onclick="triggerStreamEvent('emergencyVote')">🗳 Emergency Vote</button>
+        <button onclick="triggerStreamEvent('newLead')">🔎 New Lead</button>
+      </div>
+      <div id="activeStreamEvent" class="activeStreamEvent hint">No active stream event.</div>
+    </section>
+
     <section class="panel">
       <h2>🧠 Theory Board</h2>
 
@@ -140,9 +152,14 @@
         <div id="trustedBoard"></div>
       </div>
 
-      <div class="theoryCol suspicious">
-        <h3>Suspicious</h3>
-        <div id="suspiciousBoard"></div>
+      <div class="theoryCol interest">
+        <h3>Persons of Interest</h3>
+        <div id="interestBoard"></div>
+      </div>
+
+      <div class="theoryCol major">
+        <h3>Major Suspects</h3>
+        <div id="majorBoard"></div>
       </div>
 
       <div class="theoryCol prime">
@@ -155,6 +172,8 @@
       <h2>📊 Viewer Vote</h2>
       <p class="hint">Share the Viewer Vote link with stream chat. No Twitch login needed.</p>
       <div id="viewerVotes" class="voteBoard"><p class="hint">Votes appear after viewers vote.</p></div>
+      <h3>Player Emergency Vote</h3>
+      <div id="playerVotes" class="voteBoard"><p class="hint">Player votes appear during Emergency Vote.</p></div>
     </section>
 
     <section class="panel">

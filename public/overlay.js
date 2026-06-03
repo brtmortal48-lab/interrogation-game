@@ -43,6 +43,7 @@ socket.on("roundStarted", (data) => {
   document.getElementById("focus").innerText = "Investigating";
   document.getElementById("twist").innerText = "";
   document.getElementById("result").innerText = "";
+  hideEventBanner();
   document.getElementById("liveStatements").innerHTML = "";
   const contradictionBox = document.getElementById("broadcastContradictions");
   if (contradictionBox) contradictionBox.innerHTML = "";
@@ -94,6 +95,15 @@ socket.on("contradictionFound", (data) => {
   }
 
   document.getElementById("focus").innerText = "Contradiction Detected";
+});
+
+socket.on("streamEvent", (event) => {
+  showEventBanner(event);
+  document.getElementById("focus").innerText = event.title || "Stream Event";
+});
+
+socket.on("playerVoteUpdate", (data) => {
+  // Reserved for future split player/audience vote display.
 });
 
 socket.on("newMessage", (data) => {
@@ -161,6 +171,30 @@ function renderStatements() {
       ${escapeHtml(s.message)}
     </div>
   `).join("");
+}
+
+function showEventBanner(event) {
+  const banner = document.getElementById("broadcastEventBanner");
+  if (!banner || !event) return;
+
+  banner.style.display = "block";
+  banner.innerHTML = `
+    <div class="eventIcon">${escapeHtml(event.icon || "🎬")}</div>
+    <div>
+      <b>${escapeHtml(event.title || "STREAM EVENT")}</b>
+      <p>${escapeHtml(event.message || "")}</p>
+    </div>
+  `;
+
+  clearTimeout(showEventBanner.timer);
+  showEventBanner.timer = setTimeout(() => hideEventBanner(), 14000);
+}
+
+function hideEventBanner() {
+  const banner = document.getElementById("broadcastEventBanner");
+  if (!banner) return;
+  banner.style.display = "none";
+  banner.innerHTML = "";
 }
 
 function formatTime(seconds) {
