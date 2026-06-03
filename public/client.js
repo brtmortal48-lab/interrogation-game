@@ -39,10 +39,17 @@ function send() {
   socket.emit("sendMessage", { roomId, message: msg });
 
   input.value = "";
+
+  // If Force Alibis is active, any typed response counts as answering.
+  clearStreamEventPrompt("forceAlibis");
 }
 
 function action(actionName, targetId = null) {
   socket.emit("playerAction", { roomId, action: actionName, targetId });
+
+  if (actionName === "alibi") {
+    clearStreamEventPrompt("forceAlibis");
+  }
 }
 
 function useAbility() {
@@ -202,11 +209,20 @@ socket.on("newMessage", (data) => {
 
 socket.on("systemMessage", (message) => addSystemMessage(message));
 
+socket.on("streamEventCleared", (event) => {
+  clearStreamEventPrompt(event?.type);
+});
+
 socket.on("streamEvent", (event) => {
   const box = document.getElementById("streamEventBox");
   if (box) {
     box.style.display = "block";
-    box.innerHTML = `<b>${escapeHtml(event.icon || "🎬")} ${escapeHtml(event.title || "Stream Event")}</b><p>${escapeHtml(event.message || "")}</p>`;
+    box.dataset.eventType = event.type || "";
+    box.innerHTML = `
+      <b>${escapeHtml(event.icon || "🎬")} ${escapeHtml(event.title || "Stream Event")}</b>
+      <p>${escapeHtml(event.message || "")}</p>
+      ${event.type === "forceAlibis" ? `<button onclick="action('alibi')">State My Alibi Now</button>` : ""}
+    `;
   }
 
   const voteBtn = document.getElementById("playerVoteBtn");
@@ -295,6 +311,23 @@ function renderCaseFile(caseFile) {
       ${(caseFile.knownFacts || []).map(fact => `<li>${escapeHtml(fact)}</li>`).join("")}
     </ul>
   `;
+}
+
+function clearStreamEventPrompt(type = null) {
+  const box = document.getElementById("streamEventBox");
+  if (!box) return;
+
+  const activeType = box.dataset.eventType || "";
+  if (type && activeType && activeType !== type) return;
+
+  box.style.display = "none";
+  box.innerHTML = "";
+  box.dataset.eventType = "";
+
+  if (type === "forceAlibis") {
+    hidePressure();
+    addSystemMessage("Alibi response received. Event prompt cleared.");
+  }
 }
 
 function hidePressure() {

@@ -2,115 +2,132 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Interrogation - Player</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="playerBody">
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 
-<h1>👤 Player Console</h1>
-
-<div class="topbar">
-  <input id="name" placeholder="Your name">
-  <input id="room" placeholder="Room ID">
-  <button onclick="join()">Join</button>
-</div>
-
-<div id="joinHint" class="inviteBox">
-  Enter your name and join the room.
-</div>
-
-<div id="pressureBox" class="pressureBox" style="display:none;"></div>
-<div id="streamEventBox" class="streamEventBox" style="display:none;"></div>
-
-<div id="game" style="display:none;">
-  <div class="status">
-    <span>Room: <b id="roomLabel">--</b></span>
-    <span>Round: <b id="roundNumber">0</b></span>
-    <span>Timer: <b id="timer">--</b></span>
-    <span>Status: <b id="status">Waiting</b></span>
+<header class="playerHero">
+  <div>
+    <p class="eyebrow">PLAYER CONSOLE</p>
+    <h1>👤 The Interrogation</h1>
+    <p class="heroHint">Defend your alibi. Use your role. Watch for contradictions.</p>
   </div>
 
-  <section class="panel">
-    <h2>📁 Case File</h2>
-    <div id="caseFile" class="card">
-      <p>Waiting for case...</p>
-    </div>
+  <div class="playerTimerCard">
+    <span>Timer</span>
+    <b id="timer">--</b>
+  </div>
+</header>
+
+<section class="panel joinPanel">
+  <div class="joinGrid">
+    <input id="name" placeholder="Your name">
+    <input id="room" placeholder="Room ID">
+    <button onclick="join()">Join Game</button>
+  </div>
+  <div id="joinHint" class="inviteBox">Enter your name and join the room.</div>
+</section>
+
+<div id="game" style="display:none;">
+  <section class="playerStatusStrip">
+    <span>Room <b id="roomLabel">--</b></span>
+    <span>Round <b id="roundNumber">0</b></span>
+    <span>Status <b id="status">Waiting</b></span>
   </section>
 
-  <section class="panel">
-    <h2>🧭 Your Public Alibi</h2>
-    <div class="card">
-      <p id="publicAlibi">Waiting for round...</p>
-      <button onclick="action('alibi')">State My Alibi</button>
-    </div>
-  </section>
+  <div id="streamEventBox" class="streamEventBox" style="display:none;"></div>
+  <div id="pressureBox" class="pressureBox" style="display:none;"></div>
 
-  <section class="panel">
-    <h2>🎭 Your Secret Role</h2>
-    <div class="card">
-      <p><b id="role">Waiting...</b></p>
-      <p><b>Observation Quality:</b> <span id="confidence">--</span></p>
-      <p id="objective"></p>
-      <p><b>Bonus Objective:</b></p>
-      <p id="bonusObjective">Waiting for round...</p>
-    </div>
-  </section>
+  <main class="playerGameLayout">
+    <section class="playerMainColumn">
+      <section class="panel caseFocusPanel">
+        <h2>📁 Case File</h2>
+        <div id="caseFile" class="card compactCaseCard">
+          <p>Waiting for case...</p>
+        </div>
+      </section>
 
-  <section class="panel">
-    <h2>💡 Your Private Observation</h2>
-    <div class="card">
-      <p id="clue">Waiting for round...</p>
+      <section class="panel chatFocusPanel">
+        <div class="sectionHeaderRow">
+          <h2>💬 Interrogation Chat</h2>
+          <p class="hint">Press Enter to send.</p>
+        </div>
+        <div id="chat" class="chat playerChat"></div>
 
-      <div id="hiddenTruthBox" style="display:none;">
-        <p><b>Hidden Truth:</b></p>
-        <p id="hiddenTruth"></p>
-      </div>
+        <div class="chatInput playerChatInput">
+          <input id="msg" placeholder="Defend, accuse, explain, or question..." maxlength="180">
+          <button onclick="send()">Send</button>
+        </div>
+      </section>
+    </section>
 
-      <p><b>Anonymous Reveal Version:</b></p>
-      <p id="revealClue">Waiting for round...</p>
-      <p id="token">Reveal Token: Available</p>
-    </div>
-  </section>
+    <aside class="playerSideColumn">
+      <section class="panel alibiCardPanel priorityPanel">
+        <h2>🧭 Public Alibi</h2>
+        <div class="card">
+          <p id="publicAlibi">Waiting for round...</p>
+          <button class="fullBtn" onclick="action('alibi')">State My Alibi</button>
+        </div>
+      </section>
 
-  <section class="panel">
-    <h2>⚡ Your Ability</h2>
-    <div class="card">
-      <p><b id="abilityName">Special Ability</b></p>
-      <p id="abilityDescription">Your ability will appear when the round starts.</p>
-      <button id="abilityBtn" onclick="useAbility()">Use Special Ability</button>
-      <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
-      <button id="playerVoteBtn" style="display:none;" onclick="castEmergencyVote()">Cast Emergency Vote</button>
-      <p id="abilityStatus" class="hint">Ability: Available</p>
-    </div>
-  </section>
+      <section class="panel roleCardPanel">
+        <h2>🎭 Role & Goal</h2>
+        <div class="card roleCard">
+          <p class="roleName"><b id="role">Waiting...</b></p>
+          <p><b>Observation Quality:</b> <span id="confidence">--</span></p>
+          <p id="objective"></p>
+        </div>
+      </section>
 
-  <section class="panel">
-    <h2>⚡ Quick Actions</h2>
-    <div class="actions">
-      <button onclick="action('claim')">Ask Me</button>
-      <button onclick="action('defend')">Defend Self</button>
-      <button onclick="chooseTarget('doubt')">Doubt Someone</button>
-      <button onclick="chooseTarget('accuse')">Accuse Someone</button>
-      <button id="revealBtn" class="danger" onclick="action('reveal')">Reveal Observation Anonymously</button>
-    </div>
-    <p class="hint">
-      Your alibi gives the detective something to question. Your role ability can shift suspicion, create noise, or add pressure.
-    </p>
-  </section>
+      <section class="panel privateIntelPanel">
+        <h2>💡 Private Intel</h2>
+        <div class="card">
+          <p id="clue">Waiting for round...</p>
 
-  <section class="panel wide">
-    <h2>💬 In-Game Chat</h2>
-    <div id="chat" class="chat"></div>
+          <div id="hiddenTruthBox" class="hiddenTruthBox" style="display:none;">
+            <p><b>Hidden Truth:</b></p>
+            <p id="hiddenTruth"></p>
+          </div>
 
-    <div class="chatInput">
-      <input id="msg" placeholder="Type carefully..." maxlength="180">
-      <button onclick="send()">Send</button>
-    </div>
+          <details class="revealDetails">
+            <summary>Anonymous reveal version</summary>
+            <p id="revealClue">Waiting for round...</p>
+          </details>
 
-    <p class="hint">Press Enter to send. Keep talking, defend your alibi, and challenge contradictions.</p>
-  </section>
+          <p id="token" class="tokenText">Reveal Token: Available</p>
+        </div>
+      </section>
+
+      <section class="panel abilityPanel priorityPanel">
+        <h2>⚡ Abilities</h2>
+        <div class="card">
+          <p><b id="abilityName">Special Ability</b></p>
+          <p id="abilityDescription">Your ability will appear when the round starts.</p>
+          <div class="stackedButtons">
+            <button id="abilityBtn" onclick="useAbility()">Use Special Ability</button>
+            <button id="anonymousBtn" onclick="action('anonymous')">Send Anonymous Tip</button>
+            <button id="playerVoteBtn" style="display:none;" onclick="castEmergencyVote()">Cast Emergency Vote</button>
+          </div>
+          <p id="abilityStatus" class="hint">Ability: Available</p>
+        </div>
+      </section>
+
+      <section class="panel quickActionsPanel">
+        <h2>🎯 Quick Actions</h2>
+        <div class="actions actionGrid">
+          <button onclick="action('claim')">Ask Me</button>
+          <button onclick="action('defend')">Defend</button>
+          <button onclick="chooseTarget('doubt')">Doubt</button>
+          <button onclick="chooseTarget('accuse')">Accuse</button>
+          <button id="revealBtn" class="danger wideAction" onclick="action('reveal')">Reveal Observation</button>
+        </div>
+      </section>
+    </aside>
+  </main>
 </div>
 
 <div id="howToModal" class="modalOverlay" style="display:none;">
@@ -138,8 +155,8 @@
     <h3>Anonymous Reveal</h3>
     <p>Your reveal does not show your name. It adds an anonymous observation to the chat.</p>
 
-    <h3>Anonymous Tip</h3>
-    <p>Everyone gets one anonymous tip per round, so using it does not expose your role.</p>
+    <h3>Stream Events</h3>
+    <p>If a stream event appears, respond fast. Force Alibis clears after you state your alibi or send a response.</p>
   </div>
 </div>
 

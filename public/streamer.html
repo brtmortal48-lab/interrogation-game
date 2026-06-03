@@ -2,122 +2,127 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Interrogation - Streamer</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="streamerBody">
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 <button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
 
-<header class="streamerHero">
+<header class="streamerHero polishedHero">
   <div>
+    <p class="eyebrow">LIVE DETECTIVE ROOM</p>
     <h1>🎥 The Interrogation</h1>
     <p class="creatorSmall">Created by Zameerul Haq • Sri Lanka</p>
   </div>
 
-  <div class="bigTimerBox">
+  <div class="bigTimerBox commandTimer">
     <span>TIME REMAINING</span>
     <b id="timer">--</b>
   </div>
 </header>
 
-<section class="panel controlPanel">
-  <div class="controlGroup">
+<section class="panel commandCenter">
+  <div class="commandInputs">
     <input id="streamerName" placeholder="Streamer name">
     <input id="room" placeholder="Room ID">
-    <button onclick="join()">Join as Streamer</button>
+    <button onclick="join()">Join</button>
   </div>
 
-  <div class="controlGroup">
-    <button id="startBtn" onclick="startRound()">Start Round</button>
-    <button class="danger" onclick="reveal()">Reveal Case</button>
+  <div class="commandButtons">
+    <button id="startBtn" onclick="startRound()">▶ Start Round</button>
+    <button class="danger" onclick="reveal()">⛔ Reveal Case</button>
     <button onclick="openSettings()">⚙ Settings</button>
   </div>
 </section>
 
-<section class="panel roomPanel">
-  <div>
-    <b>Room:</b> <span id="roomLabel">--</span>
-  </div>
-
-  <div>
-    <b>Detective:</b> <span id="detectiveLabel">--</span>
-  </div>
-
-  <div>
-    <b>Players:</b> <span id="playerCount">0 / 10</span>
-  </div>
-
-  <div>
-    <b>Round:</b> <span id="roundNumber">0</span>
-  </div>
-
-  <div>
-    <b>Accused:</b> <span id="accused">None</span>
-  </div>
-
-  <div>
-    <b>Spotlight:</b> <span id="spotlight">None</span>
-  </div>
+<section class="statusChips">
+  <div><span>Room</span><b id="roomLabel">--</b></div>
+  <div><span>Detective</span><b id="detectiveLabel">--</b></div>
+  <div><span>Players</span><b id="playerCount">0 / 10</b></div>
+  <div><span>Round</span><b id="roundNumber">0</b></div>
+  <div><span>Accused</span><b id="accused">None</b></div>
+  <div><span>Spotlight</span><b id="spotlight">None</b></div>
 </section>
 
-<section class="panel linkPanel">
-  <div>
-    <b>Player Invite</b>
-    <input id="inviteLink" readonly>
-    <button onclick="copyInvite()">Copy</button>
-  </div>
-
-  <div>
-    <b>OBS Overlay</b>
-    <input id="overlayLink" readonly>
-    <button onclick="copyOverlay()">Copy</button>
-  </div>
-
-  <div>
-    <b>Viewer Vote</b>
-    <input id="voteLink" readonly>
-    <button onclick="copyVote()">Copy</button>
-  </div>
+<section class="panel sharePanel">
+  <details>
+    <summary>🔗 Invite & Overlay Links</summary>
+    <div class="shareGrid">
+      <label>Player Invite
+        <div><input id="inviteLink" readonly><button onclick="copyInvite()">Copy</button></div>
+      </label>
+      <label>OBS Overlay
+        <div><input id="overlayLink" readonly><button onclick="copyOverlay()">Copy</button></div>
+      </label>
+      <label>Viewer Vote
+        <div><input id="voteLink" readonly><button onclick="copyVote()">Copy</button></div>
+      </label>
+    </div>
+  </details>
 </section>
 
-<section class="panel lockPanel">
+<section class="panel lockPanel compactLockPanel">
   <span>Room Lock: <b id="lockState">Locked</b></span>
   <button onclick="toggleRoomLock()">Toggle Lock</button>
-  <small>Locked rooms only allow the private host link to join as streamer.</small>
+  <small>Keep locked so nobody else can steal streamer control.</small>
 </section>
 
-<section id="lobbyPlayers" class="panel">
-  <h2>Lobby Players</h2>
-  <div id="lobbyList">No players yet.</div>
-</section>
+<div id="incident" class="incident polishedIncident">Waiting for case...</div>
 
-<div id="incident" class="incident">Waiting for case...</div>
-
-<section class="panel casePanel">
-  <h2>📁 Case File</h2>
-  <div id="caseFile" class="card">
-    <p>Start a round to generate a case.</p>
-  </div>
-</section>
-
-<div class="streamerDashboard">
-  <main class="dashboardMain">
-    <section class="panel">
-      <h2>🧾 Investigation Board</h2>
-      <p class="hint">Facts and leads create questions. They should not solve the case alone.</p>
-      <div id="evidence"></div>
+<main class="directorLayout">
+  <section class="directorLeft">
+    <section class="panel casePanel priorityPanel">
+      <h2>📁 Case File</h2>
+      <div id="caseFile" class="card compactCaseCard">
+        <p>Start a round to generate a case.</p>
+      </div>
     </section>
 
     <section class="panel">
-      <h2>👥 Suspects & Alibis</h2>
-      <p class="hint">Start by asking where each player was at the case time.</p>
+      <div class="sectionHeaderRow">
+        <h2>🧾 Investigation Board</h2>
+        <p class="hint">Facts create questions, not answers.</p>
+      </div>
+      <div id="evidence" class="evidenceGrid"></div>
+    </section>
+
+    <section id="lobbyPlayers" class="panel compactLobbyPanel">
+      <h2>Lobby Players</h2>
+      <div id="lobbyList">No players yet.</div>
+    </section>
+  </section>
+
+  <section class="directorCenter">
+    <section class="panel suspectsPanel priorityPanel">
+      <div class="sectionHeaderRow">
+        <h2>👥 Suspects & Alibis</h2>
+        <p class="hint">Question alibis first, then compare contradictions.</p>
+      </div>
       <div id="players"></div>
     </section>
-  </main>
 
-  <aside class="dashboardSide">
+    <section class="panel">
+      <h2>💬 Live Statements</h2>
+      <div id="chat" class="chat sideChat directorChat"></div>
+    </section>
+  </section>
+
+  <aside class="directorRight">
+    <section class="panel streamEventsPanel priorityPanel">
+      <h2>🎬 Stream Events</h2>
+      <p class="hint">Use these when the room slows down.</p>
+      <div class="streamEventButtons eventButtonGrid">
+        <button onclick="triggerStreamEvent('forceAlibis')">📢 Force Alibis</button>
+        <button onclick="triggerStreamEvent('randomSpotlight')">🎯 Random Spotlight</button>
+        <button onclick="triggerStreamEvent('emergencyVote')">🗳 Emergency Vote</button>
+        <button onclick="triggerStreamEvent('newLead')">🔎 New Lead</button>
+      </div>
+      <div id="activeStreamEvent" class="activeStreamEvent hint">No active stream event.</div>
+    </section>
+
     <section class="panel">
       <h2>❓ Question Prompts</h2>
       <div id="questions">
@@ -128,60 +133,26 @@
     <section class="panel">
       <h2>🚨 Contradictions</h2>
       <div id="contradictions">
-        <p class="hint">Contradictions appear when player statements conflict with alibis or earlier locations.</p>
+        <p class="hint">Contradictions appear here.</p>
       </div>
     </section>
 
-    <section class="panel streamEventsPanel">
-      <h2>🎬 Stream Events</h2>
-      <p class="hint">Use these when the round slows down or you want instant drama.</p>
-      <div class="streamEventButtons">
-        <button onclick="triggerStreamEvent('forceAlibis')">📢 Force Alibis</button>
-        <button onclick="triggerStreamEvent('randomSpotlight')">🎯 Random Spotlight</button>
-        <button onclick="triggerStreamEvent('emergencyVote')">🗳 Emergency Vote</button>
-        <button onclick="triggerStreamEvent('newLead')">🔎 New Lead</button>
-      </div>
-      <div id="activeStreamEvent" class="activeStreamEvent hint">No active stream event.</div>
-    </section>
-
-    <section class="panel">
+    <section class="panel theoryPanel">
       <h2>🧠 Theory Board</h2>
-
-      <div class="theoryCol trusted">
-        <h3>Trusted</h3>
-        <div id="trustedBoard"></div>
-      </div>
-
-      <div class="theoryCol interest">
-        <h3>Persons of Interest</h3>
-        <div id="interestBoard"></div>
-      </div>
-
-      <div class="theoryCol major">
-        <h3>Major Suspects</h3>
-        <div id="majorBoard"></div>
-      </div>
-
-      <div class="theoryCol prime">
-        <h3>Prime Suspect</h3>
-        <div id="primeBoard"></div>
+      <div class="theoryStack">
+        <div class="theoryCol trusted"><h3>Trusted</h3><div id="trustedBoard"></div></div>
+        <div class="theoryCol interest"><h3>Persons of Interest</h3><div id="interestBoard"></div></div>
+        <div class="theoryCol major"><h3>Major Suspects</h3><div id="majorBoard"></div></div>
+        <div class="theoryCol prime"><h3>Prime Suspect</h3><div id="primeBoard"></div></div>
       </div>
     </section>
 
     <section class="panel">
       <h2>📊 Viewer Vote</h2>
-      <p class="hint">Share the Viewer Vote link with stream chat. No Twitch login needed.</p>
       <div id="viewerVotes" class="voteBoard"><p class="hint">Votes appear after viewers vote.</p></div>
-      <h3>Player Emergency Vote</h3>
-      <div id="playerVotes" class="voteBoard"><p class="hint">Player votes appear during Emergency Vote.</p></div>
-    </section>
-
-    <section class="panel">
-      <h2>💬 Live Statements</h2>
-      <div id="chat" class="chat sideChat"></div>
     </section>
   </aside>
-</div>
+</main>
 
 <div id="result" class="result"></div>
 
@@ -191,22 +162,10 @@
     <h2>Game Settings</h2>
 
     <div class="settingsGrid">
-      <label>Min Players
-        <input id="minPlayers" type="number" min="2" max="30" value="2">
-      </label>
-
-      <label>Max Players
-        <input id="maxPlayers" type="number" min="2" max="50" value="10">
-      </label>
-
-      <label>Round Time
-        <input id="roundTime" type="number" min="0" max="3600" value="210">
-      </label>
-
-      <label>Chat Cooldown ms
-        <input id="cooldown" type="number" min="1000" max="15000" value="4000">
-      </label>
-
+      <label>Min Players <input id="minPlayers" type="number" min="2" max="30" value="2"></label>
+      <label>Max Players <input id="maxPlayers" type="number" min="2" max="50" value="10"></label>
+      <label>Round Time <input id="roundTime" type="number" min="0" max="3600" value="210"></label>
+      <label>Chat Cooldown ms <input id="cooldown" type="number" min="1000" max="15000" value="4000"></label>
       <label>Difficulty
         <select id="difficulty">
           <option value="easy">Easy</option>
@@ -214,7 +173,6 @@
           <option value="hard">Hard</option>
         </select>
       </label>
-
       <label>Music Style
         <select id="musicStyle" onchange="restartMusicIfOn()">
           <option value="spaceSuspense" selected>Space Suspense</option>
@@ -224,10 +182,7 @@
           <option value="differentTempo">Different Tempo</option>
         </select>
       </label>
-
-      <label>Music Volume
-        <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)">
-      </label>
+      <label>Music Volume <input id="musicVolume" type="range" min="0" max="100" value="55" oninput="setMusicVolume(this.value)"></label>
     </div>
 
     <div class="modalActions">
@@ -247,8 +202,8 @@
     <ol>
       <li>Read the case file.</li>
       <li>Ask each player where they were at the case time.</li>
-      <li>Compare public alibis with anonymous reveals.</li>
-      <li>Use suspicion and pressure when stories conflict.</li>
+      <li>Use Stream Events when the room goes quiet.</li>
+      <li>Track contradictions and viewer votes.</li>
       <li>Accuse one player and reveal the case summary.</li>
     </ol>
   </div>
@@ -258,21 +213,9 @@
   <div class="modal contactModal">
     <button class="closeBtn" onclick="closeContact()">×</button>
     <h2>Contact Developer</h2>
-
-    <div class="contactRow">
-      <b>Developer</b>
-      <p>Zameerul Haq</p>
-    </div>
-
-    <div class="contactRow">
-      <b>Email</b>
-      <p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p>
-    </div>
-
-    <div class="contactRow">
-      <b>Country</b>
-      <p>Sri Lanka</p>
-    </div>
+    <div class="contactRow"><b>Developer</b><p>Zameerul Haq</p></div>
+    <div class="contactRow"><b>Email</b><p><a href="mailto:zmehaq.dev@gmail.com">zmehaq.dev@gmail.com</a></p></div>
+    <div class="contactRow"><b>Country</b><p>Sri Lanka</p></div>
   </div>
 </div>
 

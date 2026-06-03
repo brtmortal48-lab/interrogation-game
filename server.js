@@ -199,6 +199,12 @@ io.on("connection", (socket) => {
       io.to(player.id).emit("pressureCleared");
     }
 
+    if (player.pressure === "alibi") {
+      player.pressure = null;
+      io.to(player.id).emit("pressureCleared");
+      io.to(player.id).emit("streamEventCleared", { type: "forceAlibis" });
+    }
+
     detectContradiction(roomId, room, player, clean);
     emitChat(roomId, player, clean, "Statement");
   });
@@ -219,7 +225,14 @@ io.on("connection", (socket) => {
     if (action === "defend") text = "My story has a reason. Ask me where I was and who could confirm it.";
     if (action === "doubt") text = `I doubt ${targetName}'s alibi. Something feels off.`;
     if (action === "accuse") text = `I think ${targetName} is hiding something.`;
-    if (action === "alibi") text = `My public alibi: ${player.publicAlibi || "No alibi available."}`;
+    if (action === "alibi") {
+      text = `My public alibi: ${player.publicAlibi || "No alibi available."}`;
+      if (player.pressure === "alibi") {
+        player.pressure = null;
+        io.to(player.id).emit("pressureCleared");
+        io.to(player.id).emit("streamEventCleared", { type: "forceAlibis" });
+      }
+    }
 
     if (action === "anonymous") {
       if (player.anonymousUsed) {
@@ -616,6 +629,7 @@ function triggerStreamEvent(roomId, room, type) {
     room.activeStreamEvent = event;
 
     room.players.forEach((p) => {
+      p.pressure = "alibi";
       io.to(p.id).emit("streamEvent", event);
       io.to(p.id).emit("pressure", {
         type: "alibi",
