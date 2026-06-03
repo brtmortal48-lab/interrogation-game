@@ -7,13 +7,11 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="streamerBody uxBody">
-<div class="utilityDock" aria-label="Streamer tools">
-  <button onclick="location.href='/guide.html'">❓ Guide</button>
-  <button onclick="openFeedback()">💡 Feedback</button>
-  <button onclick="openPatchNotes()">📜 Patch Notes</button>
-  <button onclick="openContact()">Contact</button>
-</div>
 
+<button class="helpBtn" onclick="openHowTo()">How to Play</button>
+<button class="contactDevBtn" onclick="openContact()">Contact Developer</button>
+<button class="feedbackTopBtn" onclick="openFeedback()">💡 Feedback</button>
+<button class="patchTopBtn" onclick="openPatchNotes()">📜 Patch Notes</button>
 
 <header class="uxTopBar">
   <div class="uxBrand">
@@ -297,19 +295,78 @@
   </div>
 </div>
 
-<div id="howToModal" class="modalOverlay" style="display:none;">
-  <div class="modal">
-    <button class="closeBtn" onclick="closeHowTo()">×</button>
-    <h2>Streamer Guide</h2>
-    <ol>
-      <li>Start at Overview and read the case.</li>
-      <li>Go to Players and question alibis one by one.</li>
-      <li>Use Events only when the room slows down.</li>
-      <li>Use Board to organize suspects.</li>
-      <li>Reveal when ready.</li>
-    </ol>
+
+<div id="howToModal" class="modalOverlay launchModalOverlay" style="display:none;">
+  <div class="modal launchGuideModal">
+    <button class="closeBtn launchCloseBtn" onclick="closeHowTo()">×</button>
+    <div class="launchModalHeader">
+      <p class="eyebrow">QUICK GUIDE</p>
+      <h2>How to Play The Interrogation</h2>
+      <p>Stay on this page while learning the rules. Pick the section you need.</p>
+    </div>
+
+    <div class="guideModalTabs">
+      <button class="active" onclick="showGuideTab('quick', this)">Quick Start</button>
+      <button onclick="showGuideTab('player', this)">Players</button>
+      <button onclick="showGuideTab('streamer', this)">Streamers</button>
+      <button onclick="showGuideTab('viewer', this)">Viewers</button>
+      <button onclick="showGuideTab('systems', this)">Systems</button>
+    </div>
+
+    <div class="guideModalContent active" data-guide="quick">
+      <h3>⚡ 30 Second Version</h3>
+      <div class="guideMiniSteps">
+        <div><b>1</b><span>Streamer creates a room and shares player link.</span></div>
+        <div><b>2</b><span>Players join, get role, alibi, motive, relationship, and evidence.</span></div>
+        <div><b>3</b><span>Streamer questions alibis and uses the Detective Director.</span></div>
+        <div><b>4</b><span>Players talk, defend, accuse, vote, and reveal clues carefully.</span></div>
+        <div><b>5</b><span>Streamer accuses one person and reveals the case.</span></div>
+      </div>
+    </div>
+
+    <div class="guideModalContent" data-guide="player">
+      <h3>👤 Player Basics</h3>
+      <ul>
+        <li><b>Alibi:</b> your public story. Defend it when questioned.</li>
+        <li><b>Evidence Fragment:</b> only part of the truth. Do not assume it proves everything.</li>
+        <li><b>Motive:</b> even innocent players may look suspicious.</li>
+        <li><b>Relationship:</b> use it to explain who you trust, argued with, or observed.</li>
+        <li><b>Ability:</b> use it once at the right moment to help, mislead, or protect.</li>
+      </ul>
+    </div>
+
+    <div class="guideModalContent" data-guide="streamer">
+      <h3>🎥 Streamer Flow</h3>
+      <ul>
+        <li>Start in <b>Overview</b> and read the case file.</li>
+        <li>Open <b>Players</b> and ask one person at a time about their alibi.</li>
+        <li>Use <b>Detective Director</b> suggestions when you are unsure what to ask.</li>
+        <li>Use <b>Events</b> when the room slows down: Force Alibis, Spotlight, Vote, New Lead.</li>
+        <li>Use <b>Board</b> to organize Trusted, Persons of Interest, Major Suspects, and Prime Suspect.</li>
+      </ul>
+    </div>
+
+    <div class="guideModalContent" data-guide="viewer">
+      <h3>🗳 Viewer Role</h3>
+      <ul>
+        <li>Open the vote link and vote for who you think is the murderer.</li>
+        <li>You can change your vote before reveal.</li>
+        <li>Viewer votes influence the streamer and appear on the OBS overlay.</li>
+      </ul>
+    </div>
+
+    <div class="guideModalContent" data-guide="systems">
+      <h3>🧠 Game Systems</h3>
+      <ul>
+        <li><b>Contradictions:</b> if players change locations, the game flags it.</li>
+        <li><b>Sabotage:</b> the murderer can frame, corrupt, blur, or plant false leads.</li>
+        <li><b>Intensity:</b> rises when suspicion, votes, contradictions, and events increase.</li>
+        <li><b>Profiles:</b> use Profile ID / Detective ID to keep progress.</li>
+      </ul>
+    </div>
   </div>
 </div>
+
 
 <div id="contactModal" class="modalOverlay" style="display:none;">
   <div class="modal contactModal">
@@ -321,12 +378,17 @@
   </div>
 </div>
 
-<div id="feedbackModal" class="modalOverlay" style="display:none;">
-  <div class="modal feedbackModal">
-    <button class="closeBtn" onclick="closeFeedback()">×</button>
-    <h2>Feedback & Ideas</h2>
-    <p class="hint">Send bugs, balance notes, UI problems, or feature ideas directly into the feedback log.</p>
-    <label>Category
+
+<div id="feedbackModal" class="modalOverlay launchModalOverlay" style="display:none;">
+  <div class="modal feedbackModal professionalFeedbackModal">
+    <button class="closeBtn launchCloseBtn" onclick="closeFeedback()">×</button>
+    <div class="launchModalHeader">
+      <p class="eyebrow">COMMUNITY FEEDBACK</p>
+      <h2>Feedback & Ideas</h2>
+      <p>Report bugs, balance issues, confusing moments, or feature ideas.</p>
+    </div>
+
+    <label class="feedbackField">Category
       <select id="feedbackType">
         <option>General</option>
         <option>Bug</option>
@@ -335,10 +397,20 @@
         <option>Balance</option>
       </select>
     </label>
-    <textarea id="feedbackMessage" placeholder="What should be improved?" maxlength="1000"></textarea>
-    <button onclick="submitFeedback()">Submit Feedback</button>
+
+    <label class="feedbackField">Message
+      <textarea id="feedbackMessage" placeholder="Example: The murderer feels too weak when players reveal early..." maxlength="1000"></textarea>
+    </label>
+
+    <div id="feedbackStatus" class="feedbackStatus" style="display:none;"></div>
+
+    <div class="modalActionRow">
+      <button class="landingPrimary" onclick="submitFeedback()">Submit Feedback</button>
+      <button class="ghostMiniBtn" onclick="closeFeedback()">Cancel</button>
+    </div>
   </div>
 </div>
+
 
 <div id="patchNotesModal" class="modalOverlay" style="display:none;">
   <div class="modal patchNotesModal">

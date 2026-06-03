@@ -989,7 +989,7 @@ function closeFeedback() {
 function submitFeedback() {
   const type = document.getElementById("feedbackType")?.value || "General";
   const message = document.getElementById("feedbackMessage")?.value.trim() || "";
-  if (!message) return alert("Write your feedback first.");
+  if (!message) { const status = document.getElementById("feedbackStatus"); if (status) { status.style.display = "block"; status.innerText = "Write a short message first."; } return; }
   socket.emit("submitFeedback", { type, message, name: document.getElementById("streamerName")?.value || "Streamer", roomId, profileCode: currentHostProfileCode });
 }
 
@@ -1005,13 +1005,23 @@ function closePatchNotes() {
 }
 
 socket.on("feedbackThanks", (data) => {
-  alert(data.message || "Thanks for the feedback!");
+  const status = document.getElementById("feedbackStatus");
+  if (status) {
+    status.style.display = "block";
+    status.innerText = data.message || "Thanks — your feedback was saved.";
+  }
   const msg = document.getElementById("feedbackMessage");
   if (msg) msg.value = "";
-  closeFeedback();
+  setTimeout(closeFeedback, 900);
 });
 
-socket.on("feedbackError", (message) => alert(message));
+socket.on("feedbackError", (message) => {
+  const status = document.getElementById("feedbackStatus");
+  if (status) {
+    status.style.display = "block";
+    status.innerText = message;
+  }
+});
 
 socket.on("patchNotes", (notes) => {
   const box = document.getElementById("patchNotesList");
@@ -1054,4 +1064,12 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function showGuideTab(tab, btn) {
+  document.querySelectorAll('.guideModalContent').forEach((el) => {
+    el.classList.toggle('active', el.dataset.guide === tab);
+  });
+  document.querySelectorAll('.guideModalTabs button').forEach((el) => el.classList.remove('active'));
+  if (btn) btn.classList.add('active');
 }

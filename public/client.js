@@ -112,8 +112,10 @@ function useMurdererTool(type, needsTarget = false) {
   if (needsTarget) {
     if (!players.length) return alert("No players yet.");
     const validTargets = players.filter((p) => p.name !== name);
-    const names = validTargets.map((p, i) => `${i + 1}. ${p.name}`).join("\n");
-    const choice = prompt(`Choose sabotage target:\n${names}`);
+    const names = validTargets.map((p, i) => `${i + 1}. ${p.name}`).join("
+");
+    const choice = prompt(`Choose sabotage target:
+${names}`);
     const index = Number(choice) - 1;
     if (!validTargets[index]) return;
     targetId = validTargets[index].id;
@@ -525,18 +527,28 @@ function closeFeedback() {
 function submitFeedback() {
   const type = document.getElementById("feedbackType")?.value || "General";
   const message = document.getElementById("feedbackMessage")?.value.trim() || "";
-  if (!message) return alert("Write your feedback first.");
+  if (!message) { const status = document.getElementById("feedbackStatus"); if (status) { status.style.display = "block"; status.innerText = "Write a short message first."; } return; }
   socket.emit("submitFeedback", { type, message, name: name || document.getElementById("name")?.value || "Player", roomId, profileCode: currentProfileCode });
 }
 
 socket.on("feedbackThanks", (data) => {
-  alert(data.message || "Thanks for the feedback!");
+  const status = document.getElementById("feedbackStatus");
+  if (status) {
+    status.style.display = "block";
+    status.innerText = data.message || "Thanks — your feedback was saved.";
+  }
   const msg = document.getElementById("feedbackMessage");
   if (msg) msg.value = "";
-  closeFeedback();
+  setTimeout(closeFeedback, 900);
 });
 
-socket.on("feedbackError", (message) => alert(message));
+socket.on("feedbackError", (message) => {
+  const status = document.getElementById("feedbackStatus");
+  if (status) {
+    status.style.display = "block";
+    status.innerText = message;
+  }
+});
 
 function openHowTo() {
   document.getElementById("howToModal").style.display = "flex";
@@ -544,4 +556,12 @@ function openHowTo() {
 
 function closeHowTo() {
   document.getElementById("howToModal").style.display = "none";
+}
+
+function showGuideTab(tab, btn) {
+  document.querySelectorAll('.guideModalContent').forEach((el) => {
+    el.classList.toggle('active', el.dataset.guide === tab);
+  });
+  document.querySelectorAll('.guideModalTabs button').forEach((el) => el.classList.remove('active'));
+  if (btn) btn.classList.add('active');
 }
