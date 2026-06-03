@@ -10,10 +10,10 @@
 
 <button class="helpBtn" onclick="openHowTo()">How to Play</button>
 
-<header class="uxPlayerTop">
+<header class="uxPlayerTop proPlayerHero">
   <div>
     <p class="eyebrow">PLAYER CONSOLE</p>
-    <h1>👤 The Interrogation</h1>
+    <div class="heroTitleRow"><span class="heroAvatar">👤</span><h1>The Interrogation</h1></div>
     <p class="heroHint">Talk. Defend. Accuse. Survive the case.</p>
   </div>
   <div class="uxPlayerTimer"><span>TIME</span><b id="timer">--</b></div>
@@ -77,19 +77,30 @@
 
     <aside class="uxPlayerSidebar">
 
-      <section class="panel uxProfileCard">
-        <h2>🏅 My Profile</h2>
-        <div class="profileCodeBox">
-          <span>Profile ID</span>
-          <b id="profileCodeLabel">Guest</b>
-          <button type="button" onclick="copyProfileCode()">Copy ID</button>
+      <section class="panel uxProfileCard polishedProfileCard">
+        <div class="profileTopLine">
+          <div class="profileAvatar">🕵️</div>
+          <div>
+            <p class="eyebrow">DETECTIVE IDENTITY</p>
+            <h2 id="profileDisplayName">Guest Player</h2>
+            <p id="profileTitle">Rookie</p>
+          </div>
         </div>
-        <div class="profileMiniGrid">
-          <div><span>Title</span><b id="profileTitle">Rookie</b></div>
-          <div><span>Points</span><b id="profilePoints">0</b></div>
-          <div><span>Games</span><b id="profileGames">0</b></div>
+        <div class="profilePointsHero"><b id="profilePoints">0</b><span>Reputation Points</span></div>
+        <div class="profileMiniGrid polishedStatsGrid">
+          <div><span>Cases</span><b id="profileGames">0</b></div>
           <div><span>Win Rate</span><b id="profileWinRate">0%</b></div>
+          <div><span>Rank</span><b id="profileRankMini">Rookie</b></div>
+          <div><span>Status</span><b id="profileStatusMini">Guest</b></div>
         </div>
+        <details class="advancedProfileId">
+          <summary>Profile ID</summary>
+          <div class="profileCodeBox">
+            <b id="profileCodeLabel">Guest</b>
+            <button type="button" onclick="copyProfileCode()">Copy ID</button>
+          </div>
+          <small>Use this ID on another device to keep your points.</small>
+        </details>
       </section>
 
       <section class="panel uxAlibiCard">

@@ -28,7 +28,8 @@
     <button onclick="join()">Join</button>
     <button id="startBtn" onclick="startRound()">▶ Start</button>
     <button class="danger" onclick="reveal()">Reveal</button>
-    <button onclick="openSettings()">⚙</button>
+    <button onclick="openSettings()" title="Settings">⚙</button>
+    <button onclick="openHostProfile()" title="Host Profile">👤</button>
   </div>
 </header>
 
@@ -178,9 +179,61 @@
       <label>OBS Overlay <div><input id="overlayLink" readonly><button onclick="copyOverlay()">Copy</button></div></label>
       <label>Viewer Vote <div><input id="voteLink" readonly><button onclick="copyVote()">Copy</button></div></label>
       <label>Room Lock <div><b id="lockState">Locked</b><button onclick="toggleRoomLock()">Toggle</button></div></label>
+      <label>Host ID <div><input id="hostProfileCode" placeholder="HST-ABCD-1234"><button onclick="loadHostProfile()">Load</button></div></label>
     </div>
   </details>
 </section>
+
+
+<div id="hostProfileModal" class="modalOverlay" style="display:none;">
+  <div class="modal profileIdentityModal">
+    <button class="closeBtn" onclick="closeHostProfile()">×</button>
+    <div class="profileModalHeader">
+      <div>
+        <p class="eyebrow">HOST IDENTITY</p>
+        <h2>🎩 Detective Profile</h2>
+        <p class="hint">Create or load a host identity to keep hosted-case stats across streams.</p>
+      </div>
+      <span id="hostProfileStatus" class="profileStatusBadge">Not linked</span>
+    </div>
+
+    <div class="profileHeroCard hostProfileHero">
+      <div class="profileAvatar">🎩</div>
+      <div>
+        <h3 id="hostProfileNameLabel">Guest Detective</h3>
+        <p id="hostProfileRank">Cadet Detective</p>
+      </div>
+      <div class="profilePointsPill"><b id="hostProfilePoints">0</b><span>Community XP</span></div>
+    </div>
+
+    <div class="profileJoinGrid proProfileGrid">
+      <input id="hostProfileName" placeholder="Host display name">
+      <input id="hostChannelName" placeholder="Channel / community name optional">
+      <input id="hostProfileCodeModal" placeholder="Detective ID, e.g. HST-ABCD-1234">
+    </div>
+
+    <div class="profileJoinActions modalActions">
+      <button onclick="createHostProfile()">Create Host Profile</button>
+      <button onclick="loadHostProfile()">Load Host Profile</button>
+      <button onclick="copyHostProfileCode()">Copy Detective ID</button>
+    </div>
+
+    <details class="advancedProfileId">
+      <summary>Detective ID & transfer</summary>
+      <p>Use this ID on another browser/device to keep your hosted-case stats.</p>
+      <b id="hostProfileCodeLabel">No ID yet</b>
+    </details>
+
+    <div class="profileMiniGrid polishedStatsGrid">
+      <div><span>Cases Hosted</span><b id="hostCasesHosted">0</b></div>
+      <div><span>Solved</span><b id="hostCasesSolved">0</b></div>
+      <div><span>Success Rate</span><b id="hostSuccessRate">0%</b></div>
+      <div><span>Best Lobby</span><b id="hostBestLobby">0</b></div>
+      <div><span>Avg Players</span><b id="hostAvgPlayers">0</b></div>
+      <div><span>Escapes</span><b id="hostEscapes">0</b></div>
+    </div>
+  </div>
+</div>
 
 <div id="settingsModal" class="modalOverlay" style="display:none;">
   <div class="modal settingsModal">

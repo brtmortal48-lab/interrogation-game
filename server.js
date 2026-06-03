@@ -14,7 +14,9 @@ const io = new Server(server);
 
 const rooms = {};
 const PROFILE_FILE = path.join(__dirname, "profiles.json");
+const HOST_PROFILE_FILE = path.join(__dirname, "host_profiles.json");
 const playerProfiles = loadProfiles();
+const hostProfiles = loadHostProfiles();
 
 const DEFAULT_SETTINGS = {
   minPlayers: 2,
@@ -25,6 +27,49 @@ const DEFAULT_SETTINGS = {
 };
 
 io.on("connection", (socket) => {
+
+  socket.on("createHostProfile", ({ name, channel }) => {
+    const profile = createHostProfile(name || channel || "Detective", channel || "");
+    socket.emit("hostProfileCreated", {
+      profileCode: profile.id,
+      profile: getHostProfileStats(profile.id)
+    });
+  });
+
+  socket.on("loadHostProfile", ({ profileCode }) => {
+    const code = normalizeHostProfileCode(profileCode);
+    const profile = code ? hostProfiles[code] : null;
+
+    if (!profile) {
+      socket.emit("hostProfileError", "Host Profile not found. Check the Detective ID or create a new host profile.");
+      return;
+    }
+
+    socket.emit("hostProfileLoaded", {
+      profileCode: profile.id,
+      profile: getHostProfileStats(profile.id)
+    });
+  });
+
+  socket.on("renameHostProfile", ({ profileCode, name, channel }) => {
+    const code = normalizeHostProfileCode(profileCode);
+    const profile = code ? hostProfiles[code] : null;
+
+    if (!profile) {
+      socket.emit("hostProfileError", "Host Profile not found.");
+      return;
+    }
+
+    profile.name = sanitizeName(name || profile.name);
+    profile.channel = sanitizeMessage(channel || profile.channel || "");
+    saveHostProfiles();
+
+    socket.emit("hostProfileLoaded", {
+      profileCode: profile.id,
+      profile: getHostProfileStats(profile.id)
+    });
+  });
+
   socket.on("createRoom", () => {
     let roomId = generateRoomCode();
     while (rooms[roomId]) roomId = generateRoomCode();
@@ -76,7 +121,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("joinRoom", ({ roomId, role, name, hostKey, profileCode }) => {
+  socket.on("joinRoom", ({ roomId, role, name, hostKey, profileCode, hostProfileCode }) => {
     if (!roomId) return;
 
     roomId = String(roomId).trim().toUpperCase();
@@ -91,8 +136,20 @@ io.on("connection", (socket) => {
         return;
       }
 
+      const hostCode = normalizeHostProfileCode(hostProfileCode);
+      const hostProfile = hostCode ? hostProfiles[hostCode] : null;
+
       room.streamer = socket.id;
-      room.streamerName = sanitizeName(name || "Streamer");
+      room.hostProfileId = hostProfile ? hostProfile.id : room.hostProfileId || null;
+      room.streamerName = sanitizeName(name || (hostProfile ? hostProfile.name : "Streamer"));
+
+      if (hostProfile) {
+        socket.emit("hostProfileLinked", {
+          profileCode: hostProfile.id,
+          profile: getHostProfileStats(hostProfile.id)
+        });
+      }
+
       emitRoomUpdate(roomId);
       return;
     }
@@ -594,6 +651,7 @@ io.on("connection", (socket) => {
 
     evaluateBonusObjectives(room, murderer, accused, success);
     updatePlayerProfiles(room, success);
+    updateHostProfile(room, success);
 
     const witnesses = room.players.filter((p) => p.role === "Witness");
     const escaped = !success && murderer ? murderer.name : null;
@@ -929,6 +987,7 @@ function createRoom(hostKey) {
     players: [],
     streamer: null,
     streamerName: "Streamer",
+    hostProfileId: null,
     hostKey,
     locked: true,
     state: "lobby",
@@ -1640,6 +1699,107 @@ function generateResolutionSteps(room, murderer, accused, success) {
 
 
 
+
+function loadHostProfiles() {
+  try {
+    if (!fs.existsSync(HOST_PROFILE_FILE)) return {};
+    const data = JSON.parse(fs.readFileSync(HOST_PROFILE_FILE, "utf8"));
+    return data && typeof data === "object" ? data : {};
+  } catch (err) {
+    console.warn("Could not load host_profiles.json:", err.message);
+    return {};
+  }
+}
+
+function saveHostProfiles() {
+  try {
+    fs.writeFileSync(HOST_PROFILE_FILE, JSON.stringify(hostProfiles, null, 2));
+  } catch (err) {
+    console.warn("Could not save host_profiles.json:", err.message);
+  }
+}
+
+function normalizeHostProfileCode(code) {
+  if (!code || typeof code !== "string") return "";
+  return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^(.{3})(.{4})(.{4})$/, "$1-$2-$3");
+}
+
+function generateHostProfileCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let raw = "";
+  do {
+    raw = "HST" + Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  } while (hostProfiles[`${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`]);
+  return `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
+}
+
+function createHostProfile(name, channel = "") {
+  const id = generateHostProfileCode();
+  hostProfiles[id] = {
+    id,
+    name: sanitizeName(name || "Detective"),
+    channel: sanitizeMessage(channel || ""),
+    createdAt: new Date().toISOString(),
+    casesHosted: 0,
+    casesSolved: 0,
+    murdererEscapes: 0,
+    totalPlayers: 0,
+    bestLobby: 0,
+    communityPoints: 0,
+    emergencyEventsUsed: 0
+  };
+  saveHostProfiles();
+  return hostProfiles[id];
+}
+
+function ensureHostProfile(profileIdOrName) {
+  const code = normalizeHostProfileCode(profileIdOrName);
+  if (code && hostProfiles[code]) return hostProfiles[code];
+  if (profileIdOrName && hostProfiles[profileIdOrName]) return hostProfiles[profileIdOrName];
+  return null;
+}
+
+function getHostProfileStats(profileId) {
+  const profile = ensureHostProfile(profileId);
+  if (!profile) return null;
+  const successRate = profile.casesHosted ? Math.round((profile.casesSolved / profile.casesHosted) * 100) : 0;
+  const avgPlayers = profile.casesHosted ? Math.round((profile.totalPlayers / profile.casesHosted) * 10) / 10 : 0;
+  const rank = profile.communityPoints >= 3000 ? "Legend Detective"
+    : profile.communityPoints >= 1800 ? "Master Detective"
+    : profile.communityPoints >= 1000 ? "Chief Inspector"
+    : profile.communityPoints >= 500 ? "Inspector"
+    : profile.communityPoints >= 150 ? "Investigator"
+    : "Cadet Detective";
+  return { ...profile, successRate, avgPlayers, rank, profileCode: profile.id };
+}
+
+function updateHostProfile(room, detectiveSuccess) {
+  if (!room.hostProfileId) return;
+  const profile = ensureHostProfile(room.hostProfileId);
+  if (!profile) return;
+
+  profile.name = sanitizeName(room.streamerName || profile.name);
+  profile.casesHosted += 1;
+  profile.totalPlayers += room.players.length;
+  profile.bestLobby = Math.max(profile.bestLobby || 0, room.players.length);
+  if (detectiveSuccess) profile.casesSolved += 1;
+  else profile.murdererEscapes += 1;
+
+  const eventBonus = room.activeStreamEvent ? 10 : 0;
+  const playerBonus = Math.min(40, room.players.length * 3);
+  profile.communityPoints += 50 + (detectiveSuccess ? 30 : 10) + playerBonus + eventBonus;
+
+  saveHostProfiles();
+}
+
+function hostProfileLeaderboard() {
+  return Object.values(hostProfiles)
+    .map((p) => getHostProfileStats(p.id))
+    .filter(Boolean)
+    .sort((a, b) => b.communityPoints - a.communityPoints)
+    .slice(0, 10);
+}
+
 function loadProfiles() {
   try {
     if (!fs.existsSync(PROFILE_FILE)) return {};
@@ -1784,6 +1944,8 @@ function emitRoomUpdate(roomId) {
     viewerVotes: voteSummary(room),
     playerVotes: playerVoteSummary(room),
     leaderboard: profileLeaderboard(),
+    hostProfileStats: room.hostProfileId ? getHostProfileStats(room.hostProfileId) : null,
+    hostLeaderboard: hostProfileLeaderboard(),
     activeStreamEvent: room.activeStreamEvent,
     state: room.state,
     roundNumber: room.roundNumber,

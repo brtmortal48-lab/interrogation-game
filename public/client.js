@@ -377,6 +377,12 @@ function renderProfileStats(stats) {
   if (points) points.innerText = stats.points || 0;
   if (games) games.innerText = stats.games || 0;
   if (winRate) winRate.innerText = `${stats.winRate || 0}%`;
+  const displayName = document.getElementById("profileDisplayName");
+  const rankMini = document.getElementById("profileRankMini");
+  const statusMini = document.getElementById("profileStatusMini");
+  if (displayName) displayName.innerText = stats.name || "Guest Player";
+  if (rankMini) rankMini.innerText = stats.title || "Rookie";
+  if (statusMini) statusMini.innerText = (stats.profileCode || stats.id || "").startsWith("LOCAL-") ? "Guest" : "Linked";
 }
 
 function renderCaseFile(caseFile) {

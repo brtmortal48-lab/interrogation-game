@@ -15,6 +15,7 @@ let musicNodes = [];
 let musicInterval = null;
 
 let theory = { trusted: [], interest: [], major: [], prime: [] };
+let currentHostProfileCode = localStorage.getItem("interrogationHostProfileCode") || "";
 
 window.onload = () => {
   const params = new URLSearchParams(window.location.search);
@@ -89,7 +90,8 @@ function join() {
     roomId,
     role: "streamer",
     name: streamerName,
-    hostKey
+    hostKey,
+    hostProfileCode: currentHostProfileCode || document.getElementById("hostProfileCode")?.value || ""
   });
 }
 
@@ -99,6 +101,76 @@ function openSettings() {
 
 function closeSettings() {
   document.getElementById("settingsModal").style.display = "none";
+}
+
+function openHostProfile() {
+  document.getElementById("hostProfileModal").style.display = "flex";
+}
+
+function closeHostProfile() {
+  document.getElementById("hostProfileModal").style.display = "none";
+}
+
+function createHostProfile() {
+  const name = document.getElementById("hostProfileName")?.value.trim()
+    || document.getElementById("streamerName")?.value.trim()
+    || "Detective";
+  const channel = document.getElementById("hostChannelName")?.value.trim() || "";
+  socket.emit("createHostProfile", { name, channel });
+}
+
+function loadHostProfile() {
+  const code = document.getElementById("hostProfileCodeModal")?.value.trim()
+    || document.getElementById("hostProfileCode")?.value.trim()
+    || currentHostProfileCode;
+  if (!code) return alert("Enter your Detective ID or create a host profile first.");
+  socket.emit("loadHostProfile", { profileCode: code });
+}
+
+function copyHostProfileCode() {
+  if (!currentHostProfileCode) return alert("No Detective ID yet. Create or load a host profile first.");
+  navigator.clipboard.writeText(currentHostProfileCode);
+  alert("Detective ID copied.");
+}
+
+function setHostProfileUI(profileCode, profile) {
+  if (profileCode) {
+    currentHostProfileCode = profileCode;
+    localStorage.setItem("interrogationHostProfileCode", profileCode);
+    const input = document.getElementById("hostProfileCode");
+    const modalInput = document.getElementById("hostProfileCodeModal");
+    const label = document.getElementById("hostProfileCodeLabel");
+    if (input) input.value = profileCode;
+    if (modalInput) modalInput.value = profileCode;
+    if (label) label.innerText = profileCode;
+  }
+  renderHostProfile(profile);
+}
+
+function renderHostProfile(profile) {
+  if (!profile) return;
+  const name = document.getElementById("hostProfileNameLabel");
+  const rank = document.getElementById("hostProfileRank");
+  const points = document.getElementById("hostProfilePoints");
+  const status = document.getElementById("hostProfileStatus");
+  if (name) name.innerText = profile.name || "Guest Detective";
+  if (rank) rank.innerText = profile.rank || "Cadet Detective";
+  if (points) points.innerText = profile.communityPoints || 0;
+  if (status) { status.innerText = "Profile linked"; status.classList.add("profileLinked"); }
+  const fields = {
+    hostCasesHosted: profile.casesHosted || 0,
+    hostCasesSolved: profile.casesSolved || 0,
+    hostSuccessRate: `${profile.successRate || 0}%`,
+    hostBestLobby: profile.bestLobby || 0,
+    hostAvgPlayers: profile.avgPlayers || 0,
+    hostEscapes: profile.murdererEscapes || 0
+  };
+  for (const [id, value] of Object.entries(fields)) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = value;
+  }
+  const streamerName = document.getElementById("streamerName");
+  if (streamerName && !streamerName.value.trim() && profile.name) streamerName.value = profile.name;
 }
 
 function toggleRoomLock() {
@@ -397,6 +469,23 @@ socket.on("joinError", (message) => {
   alert(message);
 });
 
+socket.on("hostProfileCreated", (data) => {
+  setHostProfileUI(data.profileCode, data.profile);
+  alert(`Host profile created. Save this Detective ID: ${data.profileCode}`);
+});
+
+socket.on("hostProfileLoaded", (data) => {
+  setHostProfileUI(data.profileCode, data.profile);
+});
+
+socket.on("hostProfileLinked", (data) => {
+  setHostProfileUI(data.profileCode, data.profile);
+});
+
+socket.on("hostProfileError", (message) => {
+  alert(message);
+});
+
 socket.on("roomUpdate", (data) => {
   players = data.players || [];
   minPlayers = data.minPlayers || 2;
@@ -416,6 +505,8 @@ socket.on("roomUpdate", (data) => {
     document.getElementById("cooldown").value = data.settings.cooldown;
     document.getElementById("difficulty").value = data.settings.difficulty;
   }
+
+  if (data.hostProfileStats) renderHostProfile(data.hostProfileStats);
 
   renderPlayers(players);
   renderLobby(players);
@@ -459,6 +550,8 @@ socket.on("midEvidenceDrop", (e) => {
 
 socket.on("suspicionUpdate", (data) => {
   players = data.players || [];
+  if (data.hostProfileStats) renderHostProfile(data.hostProfileStats);
+
   renderPlayers(players);
   renderLobby(players);
   renderTheoryBoard();
