@@ -778,6 +778,11 @@ function renderCaseFile(caseFile) {
     <p><b>Time:</b> ${escapeHtml(caseFile.time)}</p>
     <p><b>Incident:</b> ${escapeHtml(caseFile.incident)}</p>
     <p>${escapeHtml(caseFile.atmosphere)}</p>
+    <div class="caseDepthMini streamerCaseDepth">
+      <p><b>Motive Theme:</b> ${escapeHtml(caseFile.motiveTheme || "Unknown")}</p>
+      <p><b>Suspicious Object:</b> ${escapeHtml(caseFile.suspiciousObject || "Unknown")}</p>
+      <p><b>Conflict:</b> ${escapeHtml(caseFile.conflictingDetail || "No conflict yet.")}</p>
+    </div>
     <p><b>Known Facts:</b></p>
     <ul>
       ${(caseFile.knownFacts || []).map(fact => `<li>${escapeHtml(fact)}</li>`).join("")}

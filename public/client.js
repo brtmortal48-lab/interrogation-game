@@ -186,6 +186,10 @@ socket.on("privateData", (data) => {
   document.getElementById("confidence").innerText = data.observationQuality || data.confidence || "--";
   document.getElementById("objective").innerText = data.objective || "";
   document.getElementById("bonusObjective").innerText = data.bonusObjective || "No bonus objective this round.";
+  setTextIfExists("relationshipIntel", data.relationship || "No relationship angle this round.");
+  setTextIfExists("motiveIntel", data.motive || "No personal motive this round.");
+  setTextIfExists("evidenceFragmentIntel", data.evidenceFragment || "No evidence fragment this round.");
+  setTextIfExists("interrogationAngleIntel", data.interrogationAngle || "No interrogation angle this round.");
   document.getElementById("abilityName").innerText = data.abilityName || "Special Ability";
   document.getElementById("abilityDescription").innerText =
     data.abilityDescription || "Your role ability will appear when the round starts.";
@@ -395,6 +399,11 @@ function renderCaseFile(caseFile) {
     <p><b>Time:</b> ${escapeHtml(caseFile.time)}</p>
     <p><b>Incident:</b> ${escapeHtml(caseFile.incident)}</p>
     <p>${escapeHtml(caseFile.atmosphere)}</p>
+    <div class="caseDepthMini">
+      <p><b>Motive Theme:</b> ${escapeHtml(caseFile.motiveTheme || "Unknown")}</p>
+      <p><b>Suspicious Object:</b> ${escapeHtml(caseFile.suspiciousObject || "Unknown")}</p>
+      <p><b>Conflict:</b> ${escapeHtml(caseFile.conflictingDetail || "No conflict yet.")}</p>
+    </div>
     <p><b>Known Facts:</b></p>
     <ul>
       ${(caseFile.knownFacts || []).map(fact => `<li>${escapeHtml(fact)}</li>`).join("")}
@@ -452,6 +461,11 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function setTextIfExists(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = value;
 }
 
 function openHowTo() {

@@ -454,6 +454,10 @@ io.on("connection", (socket) => {
         confidence: p.observationQuality,
         objective: p.objective,
         bonusObjective: p.bonusObjective,
+        relationship: p.relationship,
+        motive: p.motive,
+        evidenceFragment: p.evidenceFragment,
+        interrogationAngle: p.interrogationAngle,
         abilityName: p.abilityName,
         abilityDescription: p.abilityDescription,
         canUseAnonymous: true,
@@ -470,6 +474,7 @@ io.on("connection", (socket) => {
 
     io.to(roomId).emit("roundStarted", {
       caseFile: room.caseFile,
+      caseDepth: room.caseDepth,
       evidence: room.evidence,
       suggestedQuestions: room.suggestedQuestions,
       players: publicPlayers(room.players),
@@ -1246,6 +1251,32 @@ function generateCaseFile(room) {
     `The ${room.incident.object} is connected to the incident.`
   ];
 
+  const motiveThemes = [
+    "Reputation damage",
+    "Access to restricted information",
+    "Covering a previous mistake",
+    "Protecting someone else",
+    "Fear of being blamed",
+    "Control over a valuable object"
+  ];
+
+  const suspiciousObjects = [
+    room.incident.object,
+    "an unsigned access note",
+    "a corrupted security log",
+    "a misplaced keycard",
+    "a broken headset",
+    "a half-deleted message"
+  ];
+
+  const conflictingDetail = random([
+    `One person remembers movement near ${room.incident.location}, but the timing is unclear.`,
+    `Two alibis may overlap around ${room.incident.time}.`,
+    `A witness heard footsteps, but cannot identify the direction.`,
+    `A system log confirms activity, but not the person responsible.`,
+    `Someone had a reason to hide where they really were.`
+  ]);
+
   return {
     number: caseNumber,
     title: `CASE #${caseNumber}: ${room.incident.title}`,
@@ -1253,6 +1284,9 @@ function generateCaseFile(room) {
     incident: room.incident.incident,
     time: room.incident.time,
     atmosphere: room.incident.atmosphere + (room.incident.difficultyNote || ""),
+    motiveTheme: random(motiveThemes),
+    suspiciousObject: random(suspiciousObjects),
+    conflictingDetail,
     knownFacts
   };
 }
@@ -1450,7 +1484,82 @@ function assignAlibisRolesAndClues(room) {
     p.anonymousTip = generateAnonymousTip(room, p);
   });
 
+  assignDepthIntel(room, murderer, frameTarget, locations);
   assignBonusObjectives(room, murderer, frameTarget);
+}
+
+function assignDepthIntel(room, murderer, frameTarget, locations) {
+  const evidenceTypes = [
+    "Photo Fragment",
+    "Audio Fragment",
+    "Access Log",
+    "Witness Statement",
+    "Route Note",
+    "Broken Camera Note",
+    "Object Trace"
+  ];
+
+  const relationshipTemplates = [
+    (p, t) => `You trust ${t.name}, but their timing feels incomplete.`,
+    (p, t) => `You argued with ${t.name} earlier about the incident area.`,
+    (p, t) => `You were supposed to meet ${t.name}, but they were not where you expected.`,
+    (p, t) => `You saw ${t.name} near your route, but you are unsure if it matters.`,
+    (p, t) => `${t.name} can partly confirm your movement, but only if they choose to speak up.`,
+    (p, t) => `You think ${t.name} is hiding a harmless mistake that could look suspicious.`
+  ];
+
+  const motiveTemplates = [
+    `You made a small mistake earlier and do not want it blamed on you.`,
+    `You had a reason to be near ${room.incident.location}, but explaining it may sound suspicious.`,
+    `You were covering for someone else, even though you are not sure they are innocent.`,
+    `You needed information connected to ${room.incident.object}, but not for the crime.`,
+    `You panicked after the incident and your story may sound less clean than it is.`,
+    `You know one detail that could help, but saying it too early may put suspicion on you.`
+  ];
+
+  room.players.forEach((p) => {
+    const candidates = room.players.filter((x) => x.id !== p.id);
+    const target = random(candidates) || p;
+    const evidenceType = random(evidenceTypes);
+    const nearby = random(locations.filter((l) => l !== room.incident.location)) || "the hallway";
+
+    p.relationshipTargetId = target.id;
+    p.relationshipTargetName = target.name;
+    p.relationship = random(relationshipTemplates)(p, target);
+    p.motive = random(motiveTemplates);
+
+    if (p.role === "Murderer") {
+      p.relationship = `You need ${frameTarget?.name || target.name} to look more suspicious than you.`;
+      p.motive = `Your real motive is tied to ${room.incident.object}. Keep the room focused on alibi confusion.`;
+      p.evidenceFragment = `False ${evidenceType}: You can claim you noticed activity near ${nearby}, but keep it vague.`;
+      p.interrogationAngle = `If questioned, redirect toward ${frameTarget?.name || target.name}'s timing gap.`;
+      return;
+    }
+
+    if (p.role === "Accomplice") {
+      p.relationship = `You know ${murderer.name} is connected to the incident. Do not make the protection obvious.`;
+      p.motive = `You are protecting someone because exposing them may expose you too.`;
+      p.evidenceFragment = `Cover Fragment: One detail can make ${murderer.name}'s route sound less suspicious.`;
+      p.interrogationAngle = `Defend without over-defending. Too much support will look coordinated.`;
+      return;
+    }
+
+    p.evidenceFragment = random([
+      `${evidenceType}: You noticed a clue connected to ${room.incident.location}, but it does not identify anyone directly.`,
+      `${evidenceType}: Something around ${room.incident.time} does not match a clean timeline.`,
+      `${evidenceType}: You can confirm movement near ${nearby}, but not who caused the incident.`,
+      `${evidenceType}: This supports one theory, but could also be misunderstood.`,
+      `${evidenceType}: It may explain why someone innocent looked nervous.`
+    ]);
+
+    p.interrogationAngle = random([
+      `Ask who can confirm your route before revealing too much.`,
+      `Use your relationship detail to challenge another player's timeline.`,
+      `Do not oversell your evidence. It is a fragment, not proof.`,
+      `Your motive can make you look suspicious, so explain it carefully.`,
+      `Push others to explain what they were doing, not just where they were.`
+    ]);
+  });
 }
 
 function generateInvestigationBoard(room) {
@@ -1474,6 +1583,16 @@ function generateInvestigationBoard(room) {
       type: "Alibi Lead",
       reliability: "Questionable",
       text: `At least one public alibi may have a timing gap. Compare stories carefully.`
+    },
+    {
+      type: "Motive Theme",
+      reliability: "Questionable",
+      text: `Possible motive theme: ${room.caseFile?.motiveTheme || "unknown pressure"}. This may explain why an innocent person still looks suspicious.`
+    },
+    {
+      type: "Suspicious Object",
+      reliability: "Questionable",
+      text: `Investigators found mention of ${room.caseFile?.suspiciousObject || "a suspicious object"}. It may be evidence, bait, or a coincidence.`
     },
     {
       type: "System Note",
@@ -1509,7 +1628,7 @@ function generateMidEvidence(room) {
 }
 
 function generateSuggestedQuestions(room) {
-  return [
+  const base = [
     `Where were you at ${room.incident.time}?`,
     `Who can confirm your alibi?`,
     `Why were you near that area?`,
@@ -1518,6 +1637,18 @@ function generateSuggestedQuestions(room) {
     `Who sounds too certain for a weak observation?`,
     `Which alibi has the biggest time gap?`
   ];
+
+  const contextual = room.players
+    .filter((p) => p.relationship || p.motive || p.evidenceFragment)
+    .slice(0, 6)
+    .map((p) => random([
+      `${p.name} has a personal angle. Ask what they were trying to hide.`,
+      `${p.name} has a connection to another player. Ask who they trust and why.`,
+      `${p.name} has a fragment of evidence. Ask what type of information they are holding.`,
+      `Ask ${p.name} whether their motive makes them look guilty or just nervous.`
+    ]));
+
+  return [...base, ...contextual];
 }
 
 function generateAnonymousTip(room, player) {

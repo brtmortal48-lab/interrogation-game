@@ -38,7 +38,8 @@ socket.on("roundStarted", (data) => {
 
   document.getElementById("roundNumber").innerText = data.roundNumber;
   document.getElementById("timer").innerText = formatTime(data.timeLeft);
-  document.getElementById("incident").innerText = data.incidentTitle;
+  const conflict = data.caseFile?.conflictingDetail ? ` • ${data.caseFile.conflictingDetail}` : "";
+  document.getElementById("incident").innerText = `${data.incidentTitle}${conflict}`;
   document.getElementById("accused").innerText = "None";
   document.getElementById("focus").innerText = "Investigating";
   document.getElementById("twist").innerText = "";
