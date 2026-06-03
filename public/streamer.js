@@ -322,6 +322,8 @@ function startRound() {
   document.getElementById("accused").innerText = "None";
   document.getElementById("spotlight").innerText = "None";
   document.getElementById("chat").innerHTML = "";
+  const contradictionsBox = document.getElementById("contradictions");
+  if (contradictionsBox) contradictionsBox.innerHTML = `<p class="hint">Contradictions appear when player statements conflict with alibis or earlier locations.</p>`;
 
   renderTheoryBoard();
   socket.emit("startRound", roomId);
@@ -447,6 +449,11 @@ socket.on("spotlightEnd", () => {
   addSystemMessage("Spotlight ended.");
 });
 
+socket.on("contradictionFound", (data) => {
+  addContradiction(data);
+  addSystemMessage(`🚨 Possible contradiction: ${data.playerName} mentioned ${data.currentLocation}, but earlier/alibi pointed to ${data.earlierLocation}.`);
+});
+
 socket.on("accusation", (data) => {
   document.getElementById("accused").innerText = data.playerName;
   moveToBoard(data.playerId, "prime");
@@ -454,27 +461,49 @@ socket.on("accusation", (data) => {
 });
 
 socket.on("reveal", (data) => {
-  document.getElementById("result").innerHTML = `
-    <h2>${data.success ? "✅ Detective solved it" : "❌ Murderer escaped"}</h2>
-    <p><b>Accused:</b> ${escapeHtml(data.accusedPlayerName)}</p>
-    <p><b>Real Murderer:</b> ${escapeHtml(data.culpritName)}</p>
-    <p><b>Location:</b> ${escapeHtml(data.location)}</p>
-    <p><b>What Happened:</b> ${escapeHtml(data.solution || "The full truth was revealed.")}</p>
-
-    <div class="summaryGrid">
-      <div class="summaryBox"><h3>Strong Witnesses</h3><p>${data.helpers.length ? data.helpers.map(escapeHtml).join(", ") : "None"}</p></div>
-      <div class="summaryBox"><h3>Escaped</h3><p>${data.escaped ? escapeHtml(data.escaped) : "Nobody"}</p></div>
+  const steps = (data.resolutionSteps || []).map((step, index) => `
+    <div class="cinematicStep">
+      <span>${index + 1}</span>
+      <p>${escapeHtml(step)}</p>
     </div>
+  `).join("");
 
-    <h3>Round Summary</h3>
-    ${data.players.map(p => `
-      <div class="revealRow">
-        <b>${escapeHtml(p.name)}</b> — ${escapeHtml(p.role)}
-        <span class="score">+${p.gained} / ${p.score}</span>
-        <br><small><b>Alibi:</b> ${escapeHtml(p.publicAlibi || "Unknown")}</small>
-        <br><small><b>Observation:</b> ${escapeHtml(p.clue || "None")}</small>
+  const contradictionSummary = (data.contradictions || []).length
+    ? `<h3>Contradictions Found</h3>${data.contradictions.map(c => `
+        <div class="contradictionItem">
+          <b>${escapeHtml(c.playerName)}</b>
+          <small>${escapeHtml(c.earlierLocation)} → ${escapeHtml(c.currentLocation)}</small>
+          <p>${escapeHtml(c.reason || "Possible location conflict.")}</p>
+        </div>
+      `).join("")}`
+    : `<h3>Contradictions Found</h3><p class="hint">No automatic contradictions were detected this round.</p>`;
+
+  document.getElementById("result").innerHTML = `
+    <div class="cinematicReveal ${data.success ? "solvedReveal" : "escapedReveal"}">
+      <h2>${data.success ? "✅ CASE SOLVED" : "❌ MURDERER ESCAPED"}</h2>
+      <p class="cinematicSubtitle">${escapeHtml(data.caseFile?.title || "Case Resolution")}</p>
+
+      <div class="summaryGrid">
+        <div class="summaryBox"><h3>Accused</h3><p>${escapeHtml(data.accusedPlayerName)}</p></div>
+        <div class="summaryBox"><h3>Real Murderer</h3><p>${escapeHtml(data.culpritName)}</p></div>
+        <div class="summaryBox"><h3>Location</h3><p>${escapeHtml(data.location)}</p></div>
       </div>
-    `).join("")}
+
+      <h3>How It Happened</h3>
+      <div class="cinematicTimeline">${steps}</div>
+
+      ${contradictionSummary}
+
+      <h3>Round Summary</h3>
+      ${data.players.map(p => `
+        <div class="revealRow">
+          <b>${escapeHtml(p.name)}</b> — ${escapeHtml(p.role)}
+          <span class="score">+${p.gained} / ${p.score}</span>
+          <br><small><b>Alibi:</b> ${escapeHtml(p.publicAlibi || "Unknown")}</small>
+          <br><small><b>Observation:</b> ${escapeHtml(p.clue || "None")}</small>
+        </div>
+      `).join("")}
+    </div>
   `;
 
   addSystemMessage("Truth revealed.");
@@ -519,6 +548,23 @@ function renderVoteBoard(votes) {
       <div class="voteMeter"><div style="width:${v.percent}%"></div></div>
     </div>
   `).join("");
+}
+
+
+function addContradiction(data) {
+  const box = document.getElementById("contradictions");
+  if (!box) return;
+
+  const current = box.innerHTML.includes("contradictionItem") ? box.innerHTML : "";
+  box.innerHTML = `
+    <div class="contradictionItem hotContradiction">
+      <b>${escapeHtml(data.playerName)}</b>
+      <small>${escapeHtml(data.earlierLocation)} → ${escapeHtml(data.currentLocation)}</small>
+      <p>${escapeHtml(data.reason || "Possible location conflict detected.")}</p>
+      <p><b>Earlier:</b> ${escapeHtml(data.earlier)}</p>
+      <p><b>Now:</b> ${escapeHtml(data.current)}</p>
+    </div>
+  ` + current;
 }
 
 function renderCaseFile(caseFile) {

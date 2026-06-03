@@ -44,6 +44,8 @@ socket.on("roundStarted", (data) => {
   document.getElementById("twist").innerText = "";
   document.getElementById("result").innerText = "";
   document.getElementById("liveStatements").innerHTML = "";
+  const contradictionBox = document.getElementById("broadcastContradictions");
+  if (contradictionBox) contradictionBox.innerHTML = "";
 
   renderSusBoard();
   renderVoteBoard(data.viewerVotes || []);
@@ -80,6 +82,20 @@ socket.on("accusation", (data) => {
   document.getElementById("focus").innerText = "Final Accusation";
 });
 
+socket.on("contradictionFound", (data) => {
+  const box = document.getElementById("broadcastContradictions");
+  if (box) {
+    box.innerHTML = `
+      <div class="broadcastContradiction">
+        <b>${escapeHtml(data.playerName)}</b>
+        <span>${escapeHtml(data.earlierLocation)} → ${escapeHtml(data.currentLocation)}</span>
+      </div>
+    ` + box.innerHTML;
+  }
+
+  document.getElementById("focus").innerText = "Contradiction Detected";
+});
+
 socket.on("newMessage", (data) => {
   statements.unshift(data);
   statements = statements.slice(0, 6);
@@ -87,11 +103,22 @@ socket.on("newMessage", (data) => {
 });
 
 socket.on("reveal", (data) => {
-  document.getElementById("result").innerText = data.success
-    ? `✅ CASE SOLVED — Culprit: ${data.culpritName}`
-    : `❌ WRONG ACCUSATION — Culprit Escaped: ${data.culpritName}`;
+  const steps = (data.resolutionSteps || []).slice(0, 4).map((step, index) => `
+    <div class="broadcastRevealStep">
+      <span>${index + 1}</span>
+      <p>${escapeHtml(step)}</p>
+    </div>
+  `).join("");
 
-  document.getElementById("focus").innerText = data.success ? "Solved" : "Culprit Escaped";
+  document.getElementById("result").innerHTML = `
+    <div class="broadcastRevealCinematic">
+      <h2>${data.success ? "✅ CASE SOLVED" : "❌ MURDERER ESCAPED"}</h2>
+      <h3>Real Murderer: ${escapeHtml(data.culpritName)}</h3>
+      ${steps}
+    </div>
+  `;
+
+  document.getElementById("focus").innerText = data.success ? "Solved" : "Murderer Escaped";
 });
 
 function renderSusBoard() {

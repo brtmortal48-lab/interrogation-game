@@ -1309,3 +1309,184 @@ a.linkBtn {
   border-radius: 999px;
   background: linear-gradient(90deg, #38bdf8, #a78bfa);
 }
+
+
+/* Phase 11D Viewer Voting */
+.voteChoices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.voteChoice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.75);
+  cursor: pointer;
+}
+
+.voteChoice:hover {
+  transform: translateY(-1px);
+}
+
+.selectedVote {
+  border-color: rgba(34, 197, 94, 0.9);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.22);
+}
+
+.voteBoard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voteRow {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.voteTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.voteTop span {
+  color: #94a3b8;
+}
+
+.voteMeter {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+}
+
+.voteMeter div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #a78bfa);
+}
+
+/* Phase 12A - Contradictions and cinematic reveal */
+.contradictionItem {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(127, 29, 29, 0.22);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.contradictionItem b {
+  display: block;
+  color: #fecaca;
+  margin-bottom: 4px;
+}
+
+.contradictionItem small {
+  display: inline-block;
+  color: #fca5a5;
+  margin-bottom: 6px;
+}
+
+.hotContradiction {
+  box-shadow: 0 0 18px rgba(248, 113, 113, 0.25);
+}
+
+.cinematicReveal {
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.88);
+}
+
+.solvedReveal {
+  box-shadow: 0 0 26px rgba(34, 197, 94, 0.16);
+}
+
+.escapedReveal {
+  box-shadow: 0 0 26px rgba(239, 68, 68, 0.18);
+}
+
+.cinematicSubtitle {
+  color: #94a3b8;
+  margin-top: -6px;
+}
+
+.cinematicTimeline {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.cinematicStep {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: start;
+  background: rgba(2, 6, 23, 0.45);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.cinematicStep span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(59, 130, 246, 0.3);
+  font-weight: 800;
+}
+
+.broadcastContradiction {
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.broadcastContradiction b,
+.broadcastContradiction span {
+  display: block;
+}
+
+.broadcastContradiction span {
+  color: #fecaca;
+  font-size: 13px;
+}
+
+.broadcastRevealCinematic {
+  text-align: left;
+}
+
+.broadcastRevealCinematic h2 {
+  margin-bottom: 8px;
+}
+
+.broadcastRevealStep {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.broadcastRevealStep span {
+  background: rgba(59, 130, 246, 0.35);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+}

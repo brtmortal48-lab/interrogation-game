@@ -195,6 +195,7 @@ io.on("connection", (socket) => {
       io.to(player.id).emit("pressureCleared");
     }
 
+    detectContradiction(roomId, room, player, clean);
     emitChat(roomId, player, clean, "Statement");
   });
 
@@ -509,6 +510,8 @@ io.on("connection", (socket) => {
       location: room.incident.location,
       caseFile: room.caseFile,
       solution: room.incident.solution,
+      resolutionSteps: generateResolutionSteps(room, murderer, accused, success),
+      contradictions: room.contradictions || [],
       helpers: witnesses.map((p) => p.name),
       misleaders: [],
       escaped,
@@ -580,6 +583,8 @@ function createRoom(hostKey) {
     accused: null,
     spotlightPlayerId: null,
     viewerVotes: {},
+    statementHistory: [],
+    contradictions: [],
     settings: { ...DEFAULT_SETTINGS }
   };
 }
@@ -1143,6 +1148,125 @@ function emitVoteUpdate(roomId) {
     players: publicPlayers(room.players),
     viewerVotes: voteSummary(room)
   });
+}
+
+
+function detectContradiction(roomId, room, player, message) {
+  const currentLocation = extractLocation(message, room);
+  const alibiLocation = extractLocation(player.publicAlibi || "", room);
+
+  const previousStatements = (room.statementHistory || []).filter((s) => s.playerId === player.id);
+  const previousWithLocation = [...previousStatements].reverse().find((s) => s.location);
+
+  const statement = {
+    playerId: player.id,
+    playerName: player.name,
+    message,
+    location: currentLocation,
+    time: new Date().toLocaleTimeString()
+  };
+
+  room.statementHistory = room.statementHistory || [];
+  room.statementHistory.push(statement);
+  room.statementHistory = room.statementHistory.slice(-80);
+
+  if (!currentLocation) return;
+
+  let earlier = null;
+  let earlierLocation = null;
+  let reason = "";
+
+  if (previousWithLocation && previousWithLocation.location !== currentLocation) {
+    earlier = previousWithLocation.message;
+    earlierLocation = previousWithLocation.location;
+    reason = "This player mentioned a different location earlier.";
+  } else if (alibiLocation && alibiLocation !== currentLocation) {
+    earlier = player.publicAlibi;
+    earlierLocation = alibiLocation;
+    reason = "This statement may conflict with their public alibi.";
+  }
+
+  if (!earlier || !earlierLocation) return;
+
+  const duplicate = (room.contradictions || []).some((c) =>
+    c.playerId === player.id &&
+    c.earlierLocation === earlierLocation &&
+    c.currentLocation === currentLocation
+  );
+
+  if (duplicate) return;
+
+  const contradiction = {
+    playerId: player.id,
+    playerName: player.name,
+    earlier,
+    current: message,
+    earlierLocation,
+    currentLocation,
+    reason,
+    time: new Date().toLocaleTimeString()
+  };
+
+  room.contradictions = room.contradictions || [];
+  room.contradictions.unshift(contradiction);
+  room.contradictions = room.contradictions.slice(0, 8);
+
+  player.suspicion = Math.max(0, Math.min(100, (player.suspicion || 0) + 10));
+
+  io.to(roomId).emit("contradictionFound", contradiction);
+  io.to(roomId).emit("suspicionUpdate", { players: publicPlayers(room.players) });
+  io.to(roomId).emit("soundCue", "twist");
+}
+
+function extractLocation(text, room) {
+  if (!text || !room || !room.incident) return null;
+
+  const knownLocations = unique([
+    room.incident.location,
+    "Security Office",
+    "Research Lab",
+    "Broadcast Room",
+    "Archive Room",
+    "Control Room",
+    "Hallway",
+    "Storage",
+    "Cafeteria",
+    "Lobby",
+    "Server Room",
+    "Generator Room",
+    "West Corridor",
+    "Meeting Room",
+    "Maintenance Bay"
+  ]);
+
+  const lower = String(text).toLowerCase();
+  const found = knownLocations.find((location) => lower.includes(location.toLowerCase()));
+  return found || null;
+}
+
+function generateResolutionSteps(room, murderer, accused, success) {
+  const caseFile = room.caseFile || {};
+  const murdererName = murderer ? murderer.name : "Unknown";
+  const accusedName = accused ? accused.name : "No one";
+  const strongestContradiction = (room.contradictions || [])[0];
+
+  const steps = [
+    `At ${room.incident.time}, the incident began near ${room.incident.location}.`,
+    `Most players gave public alibis, but at least one timeline had to be compared carefully.`,
+    `${murdererName}'s real connection to ${room.incident.location} was hidden behind a public alibi.`,
+    room.incident.solution || `The murderer used the confusion around ${room.incident.location} to avoid suspicion.`
+  ];
+
+  if (strongestContradiction) {
+    steps.splice(2, 0, `${strongestContradiction.playerName} created a contradiction: ${strongestContradiction.earlierLocation} vs ${strongestContradiction.currentLocation}.`);
+  }
+
+  steps.push(success
+    ? `The detective accused ${accusedName}, which exposed the murderer correctly.`
+    : `The detective accused ${accusedName}, allowing ${murdererName} to escape.`
+  );
+
+  return steps;
 }
 
 function publicPlayers(players) {
