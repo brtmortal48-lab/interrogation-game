@@ -112,10 +112,8 @@ function useMurdererTool(type, needsTarget = false) {
   if (needsTarget) {
     if (!players.length) return alert("No players yet.");
     const validTargets = players.filter((p) => p.name !== name);
-    const names = validTargets.map((p, i) => `${i + 1}. ${p.name}`).join("
-");
-    const choice = prompt(`Choose sabotage target:
-${names}`);
+    const names = validTargets.map((p, i) => `${i + 1}. ${p.name}`).join("\n");
+    const choice = prompt(`Choose sabotage target:\n${names}`);
     const index = Number(choice) - 1;
     if (!validTargets[index]) return;
     targetId = validTargets[index].id;
